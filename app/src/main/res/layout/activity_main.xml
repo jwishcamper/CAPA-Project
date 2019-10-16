@@ -14,6 +14,7 @@
 
         <TextView
             android:layout_width="match_parent"
+            android:id="@+id/text"
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
             android:text="Personal Assistant" />

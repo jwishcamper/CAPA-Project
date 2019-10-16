@@ -8,6 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.TextView
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.fragment_testing.*
+import java.util.*
 
 
 class testingFragment : Fragment() {
@@ -18,10 +22,12 @@ class testingFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-
-        return inflater.inflate(R.layout.fragment_testing, container, false)
+        val inf = inflater.inflate(R.layout.fragment_testing, container, false)
+        //val textV: TextView = inf.findViewById(R.id.tView)
+        //val currentTime = Calendar.getInstance().time
+        //textV.text = currentTime.toString()
+        return inf
     }
-
 
 
 }

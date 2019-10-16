@@ -5,4 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#7986CB"
-    tools:context=".testingFragment" />
+    tools:context=".testingFragment" >
+
+    <TextView
+        android:id="@+id/tView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</FrameLayout>

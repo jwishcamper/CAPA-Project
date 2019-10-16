@@ -1,6 +1,7 @@
 package com.example.capaproject
 
 import android.app.ActionBar
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.FrameLayout
@@ -10,8 +11,8 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import kotlinx.android.synthetic.main.activity_main.*
 
-const val fragHeight = 350
-const val paddingHeight = 35
+const val fragHeight = 200
+const val paddingHeight = 5
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,7 +20,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        for (i in 1..7){ createFragment("testFragment") }
+        for (i in 1..11){ createFragment("testFragment") }
     }
 
     //creates a new frame and fragment in it of type fragmentType
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         linearLayout.addView(newFrag)
         newFrag.layoutParams.height = fragHeight
         newFrag.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
+        newFrag.setBackgroundColor(Color.rgb((128..255).random(), (128..255).random(), (128..255).random()))
 
         //add fragment to created frame
         when(fragmentType) {

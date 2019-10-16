@@ -4,7 +4,9 @@ import android.app.ActionBar
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -38,6 +40,10 @@ class MainActivity : AppCompatActivity() {
         newFrag.layoutParams.height = fragHeight
         newFrag.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
         newFrag.setBackgroundColor(Color.rgb((128..255).random(), (128..255).random(), (128..255).random()))
+        newFrag.setOnClickListener(){if(newFrag != null)
+            newFrag.visibility = View.GONE
+            Toast.makeText(this, "Removed ID: " + newFrag.id, Toast.LENGTH_LONG).show()}
+
 
         //add fragment to created frame
         when(fragmentType) {

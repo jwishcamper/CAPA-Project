@@ -10,10 +10,11 @@
         android:paddingRight="16dp"
         android:orientation="vertical"
 
-        android:id="@+id/linearLayout">
+        android:id="@+id/mainLayout">
 
         <TextView
             android:layout_width="match_parent"
+            android:id="@+id/text"
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
             android:text="Personal Assistant" />

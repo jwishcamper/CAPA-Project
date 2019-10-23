@@ -20,6 +20,7 @@ const val paddingHeight = 35
 //used to keep track of created fragments
 var viewIDs = mutableListOf<Int>()
 var fragments = mutableListOf<Fragment>()
+val stateHelper = stateChange()
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         createFragment("testFragment",800)
         createFragment("testFragment",700)
         createFragment("testFragment",350)
-        updateTime()
+        updateContext()
 
     }
 
@@ -43,16 +44,16 @@ class MainActivity : AppCompatActivity() {
         fragments.clear()
         for (i in viewIDs){
             var currentFrame :View = findViewById(i)
-                currentFrame.visibility = GONE
+            currentFrame.visibility = GONE
         }
         viewIDs.clear()
     }
 
-    private fun updateTime(){
+    //updates textbox context every 1000 milliseconds
+    private fun updateContext(){
         fixedRateTimer("timer",false,0,1000){
             this@MainActivity.runOnUiThread {
-                val ef = stateChange()
-                text.text = ef.getTime()
+                text.text = stateHelper.getContext()
             }
         }
     }

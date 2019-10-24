@@ -1,9 +1,11 @@
 package com.example.capaproject
 
 import android.app.ActionBar
+import android.app.AlarmManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.provider.Settings
 import android.view.View
 import android.view.View.GONE
 import android.widget.FrameLayout
@@ -17,6 +19,7 @@ import java.util.*
 import kotlin.concurrent.fixedRateTimer
 
 const val paddingHeight = 35
+const val indexOfTop=1
 //used to keep track of created fragments
 var viewIDs = mutableListOf<Int>()
 var fragments = mutableListOf<Fragment>()
@@ -28,11 +31,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        for (i in 1..7){ createFragment("testFragment",i*100) }
-        removeAllFragments()
-        createFragment("testFragment",800)
-        createFragment("testFragment",700)
-        createFragment("testFragment",350)
+
+        createFragment("alarmDisplay",250)
         updateContext()
 
     }
@@ -76,12 +76,39 @@ class MainActivity : AppCompatActivity() {
         newFrag.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
 
         //add fragment to created frame
-        when(fragmentType) {
-            "testFragment" -> {
-                val fragToAdd = testingFragment()
-                fragments.add(fragToAdd)
-                addFragment(fragToAdd, newFrag.id) }
+        var fragToAdd = when(fragmentType) {
+            "alarmDisplay" -> { alarmDisplay() }
+            else -> { testingFragment() }
         }
+        fragments.add(fragToAdd)
+        addFragment(fragToAdd, newFrag.id)
+    }
+
+
+    private fun createTopFragment(fragmentType:String,height:Int=350){
+
+
+        var newFrag = FrameLayout(this)
+        newFrag.id = ViewCompat.generateViewId()
+        viewIDs.add(newFrag.id)
+        mainLayout.addView(newFrag,indexOfTop)
+        newFrag.layoutParams.height = height
+        newFrag.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
+
+        var newPadding = FrameLayout(this)
+        newPadding.id = ViewCompat.generateViewId()
+        viewIDs.add(newPadding.id)
+        mainLayout.addView(newPadding,indexOfTop)
+        newPadding.layoutParams.height = paddingHeight
+        newPadding.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
+
+        //add fragment to created frame
+        var fragToAdd = when(fragmentType) {
+            "alarmDisplay" -> { alarmDisplay() }
+            else -> { testingFragment() }
+        }
+        fragments.add(fragToAdd)
+        addFragment(fragToAdd, newFrag.id)
     }
 
 

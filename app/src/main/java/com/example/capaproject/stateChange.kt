@@ -7,7 +7,15 @@ import java.util.*
 class stateChange(){
 
     private fun getDateTime() : String {
-        return Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()+":"+Calendar.getInstance().get(Calendar.MINUTE).toString()
+        var time = Calendar.getInstance().get(Calendar.MINUTE)
+        var timeString =""
+        if(time < 10){
+            timeString = "0"+time.toString()
+        }
+        else{
+            timeString = time.toString()
+        }
+        return Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()+":"+timeString
     }
     private fun getDay() : String {
         var s = Calendar.getInstance().getDisplayName(Calendar.DAY_OF_WEEK,Calendar.LONG,Locale.getDefault())

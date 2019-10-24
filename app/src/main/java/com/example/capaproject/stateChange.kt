@@ -7,18 +7,20 @@ import java.util.*
 class stateChange(){
 
     private fun getDateTime() : String {
-        var time = Calendar.getInstance().get(Calendar.MINUTE)
-        var timeString =""
-        if(time < 10){
-            timeString = "0"+time.toString()
-        }
-        else{
-            timeString = time.toString()
-        }
-        return Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()+":"+timeString
+        val min = Calendar.getInstance().get(Calendar.MINUTE)
+        var hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val minString = if(min < 10){ "0$min"}
+            else{ min.toString() }
+        val ampm = if(hour < 12) { "am" }
+            else { "pm" }
+        if(hour>12)
+            hour-=12
+        if(hour==0)
+            hour=12
+        return "$hour:$minString $ampm"
     }
     private fun getDay() : String {
-        var s = Calendar.getInstance().getDisplayName(Calendar.DAY_OF_WEEK,Calendar.LONG,Locale.getDefault())
+        var s = Calendar.getInstance().getDisplayName(Calendar.DAY_OF_WEEK,Calendar.LONG,Locale.getDefault()) as String
         s+= when(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)){
             in 0..6 -> " Night"
             in 7..11 -> " Morning"

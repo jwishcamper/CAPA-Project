@@ -17,7 +17,6 @@ import kotlin.concurrent.fixedRateTimer
 
 class alarmDisplay : Fragment() {
 
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -52,6 +51,7 @@ class alarmDisplay : Fragment() {
         if (i.resolveActivity(activity!!.packageManager) != null) {
             startActivity(i) }
     }
+    //maybe find a better way to update than with a timer
     private fun updateNextAlarm(txt:TextView,res:ContentResolver){
         fixedRateTimer("timer",false,0,1000){
             this@alarmDisplay.activity!!.runOnUiThread {

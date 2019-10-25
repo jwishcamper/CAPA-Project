@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
 
         createFragment("alarmDisplay",350)
+        createFragment("mediaPlayer",350)
         updateContext()
 
     }
@@ -59,7 +60,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    //creates a new frame and fragment in it of type fragmentType
+    //creates a new frame and fragment in it of type fragmentType at bottom of GUI
     private fun createFragment(fragmentType:String,height:Int=350){
         //add padding
         val newPadding = FrameLayout(this)
@@ -80,15 +81,15 @@ class MainActivity : AppCompatActivity() {
         //add fragment to created frame
         val fragToAdd = when(fragmentType) {
             "alarmDisplay" -> { alarmDisplay() }
+            "mediaPlayer" -> { mediaPlayer() }
             else -> { testingFragment() }
         }
         fragments.add(fragToAdd)
         addFragment(fragToAdd, newFrag.id)
     }
 
-
+    //creates a fragment at top of the screen of fragmentType
     private fun createTopFragment(fragmentType:String,height:Int=350){
-
 
         val newFrag = FrameLayout(this)
         newFrag.id = ViewCompat.generateViewId()
@@ -107,6 +108,7 @@ class MainActivity : AppCompatActivity() {
         //add fragment to created frame
         val fragToAdd = when(fragmentType) {
             "alarmDisplay" -> { alarmDisplay() }
+            "mediaPlayer" -> { mediaPlayer() }
             else -> { testingFragment() }
         }
         fragments.add(fragToAdd)

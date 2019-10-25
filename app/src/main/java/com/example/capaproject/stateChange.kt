@@ -6,6 +6,7 @@ import java.util.*
 //location, and activity state to guess at the context of the user
 class stateChange(){
 
+    //returns time as string eg: "9:23 pm"
     private fun getDateTime() : String {
         val min = Calendar.getInstance().get(Calendar.MINUTE)
         var hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -19,6 +20,8 @@ class stateChange(){
             hour=12
         return "$hour:$minString $ampm"
     }
+    //returns day as string eg: "Thursday Afternoon"
+    //if you just want the day, copy the first line of the function
     private fun getDay() : String {
         var s = Calendar.getInstance().getDisplayName(Calendar.DAY_OF_WEEK,Calendar.LONG,Locale.getDefault()) as String
         s+= when(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)){
@@ -30,6 +33,8 @@ class stateChange(){
         }
         return s
     }
+
+
     fun getContext() : String{
         return getDay() + ", " + getDateTime()
     }

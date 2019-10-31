@@ -1,7 +1,10 @@
 package com.example.capaproject
 
 import android.app.ActionBar
+import android.app.Activity
 import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -14,6 +17,9 @@ import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.location.ActivityRecognition
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
@@ -25,14 +31,18 @@ const val indexOfTop=1
 //used to keep track of created fragments
 var viewIDs = mutableListOf<Int>()
 var fragments = mutableListOf<Fragment>()
-val stateHelper = stateChange()
+lateinit var stateHelper: stateChange
+
 
 class MainActivity : AppCompatActivity() {
-
+companion object{
+    var currentActivity : String = "None"
+}
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        stateHelper = stateChange(this)
 
         createFragment("alarmDisplay",350)
         createFragment("mediaPlayer",350)
@@ -131,4 +141,5 @@ class MainActivity : AppCompatActivity() {
     private fun AppCompatActivity.removeFragment(fragment: Fragment) {
         supportFragmentManager.inTransaction { remove(fragment) }
     }
+
 }

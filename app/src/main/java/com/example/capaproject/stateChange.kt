@@ -1,10 +1,50 @@
 package com.example.capaproject
 
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.location.ActivityRecognition
 import java.util.*
 
 //goal of stateChange class - use information such as time, day of week,
 //location, and activity state to guess at the context of the user
-class stateChange(){
+class stateChange(val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
+
+
+    var mApiClient: GoogleApiClient
+    init {
+        mApiClient = GoogleApiClient.Builder(context)
+            .addApi(ActivityRecognition.API)
+            .addConnectionCallbacks(this)
+            .addOnConnectionFailedListener(this)
+            .build()
+
+        mApiClient.connect()
+    }
+
+    override fun onConnected(bundle: Bundle?) {
+        val intent = Intent(context, ActivityIntentService::class.java)
+        val pendingIntent =
+            PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
+            mApiClient,
+            3000,
+            pendingIntent
+        )
+    }
+
+    override fun onConnectionSuspended(i: Int) {
+
+    }
+
+    override fun onConnectionFailed(connectionResult: ConnectionResult) {
+
+    }
+
+
 
     //returns time as string eg: "9:23 pm"
     private fun getDateTime() : String {
@@ -36,6 +76,6 @@ class stateChange(){
 
 
     fun getContext() : String{
-        return getDay() + ", " + getDateTime()
+        return getDay() + ", " + getDateTime() + "     Activity: " + MainActivity.currentActivity
     }
 }

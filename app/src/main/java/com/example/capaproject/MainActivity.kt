@@ -23,18 +23,28 @@ import com.google.android.gms.location.ActivityRecognition
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
+import android.R.attr.y
+import android.R.attr.x
+import android.graphics.Point
+import android.view.Display
 
+//space between fragments
 const val paddingHeight = 35
 
-//if we want something to
+//If there is an XML element to be at top of screen, increment this
 const val indexOfTop=1
-//used to keep track of created fragments
+
+//used to keep track of created view IDs and fragments
 var viewIDs = mutableListOf<Int>()
 var fragments = mutableListOf<Fragment>()
-lateinit var stateHelper: stateChange
 
 
 class MainActivity : AppCompatActivity() {
+
+    //helper object to determine user state
+    lateinit var stateHelper: stateChange
+
+    //currentActivity is current most probable activity
 companion object{
     var currentActivity : String = "None"
 }
@@ -44,10 +54,27 @@ companion object{
 
         stateHelper = stateChange(this)
 
-        createFragment("alarmDisplay",350)
-        createFragment("mediaPlayer",350)
+        createFragment("alarmDisplay",getScreenHeight()/7)
+        createFragment("mediaPlayer",getScreenHeight()/7, indexOfTop)
         updateContext()
 
+    }
+
+    //updates textbox context every 1000 milliseconds
+    //placeholder to be used for testing
+    private fun updateContext(){
+        fixedRateTimer("timer",false,0,1000){
+            this@MainActivity.runOnUiThread {
+                text.text = stateHelper.getContext()
+            }
+        }
+    }
+
+    private fun getScreenHeight() : Int{
+        val display = windowManager.defaultDisplay
+        val size = Point()
+        display.getSize(size)
+        return size.y
     }
 
     private fun removeAllFragments(){
@@ -62,69 +89,44 @@ companion object{
         viewIDs.clear()
     }
 
-    //updates textbox context every 1000 milliseconds
-    private fun updateContext(){
-        fixedRateTimer("timer",false,0,1000){
-            this@MainActivity.runOnUiThread {
-                text.text = stateHelper.getContext()
-            }
-        }
-    }
-    //creates a new frame and fragment in it of type fragmentType at bottom of GUI
-    private fun createFragment(fragmentType:String,height:Int=350){
-        //add padding
+    //creates a new frame and fragment in it of type fragmentType
+    //if a new fragment at bottom is desired, pass nothing for index
+    //if a new fragment at top is desired, pass indexOfTop for index
+    private fun createFragment(fragmentType:String,height:Int=350,index:Int=-1){
         val newPadding = FrameLayout(this)
         newPadding.id = ViewCompat.generateViewId()
-        viewIDs.add(newPadding.id)
-        mainLayout.addView(newPadding)
-        newPadding.layoutParams.height = paddingHeight
-        newPadding.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
-
-        //add new frame
         val newFrag = FrameLayout(this)
         newFrag.id = ViewCompat.generateViewId()
-        viewIDs.add(newFrag.id)
-        mainLayout.addView(newFrag)
+        //add to bottom
+        if(index==-1){
+            viewIDs.add(newPadding.id)
+            mainLayout.addView(newPadding)
+            viewIDs.add(newFrag.id)
+            mainLayout.addView(newFrag)
+        }
+        //add to index
+        else{
+            viewIDs.add(newFrag.id)
+            mainLayout.addView(newFrag,index)
+            viewIDs.add(newPadding.id)
+            mainLayout.addView(newPadding,index)
+        }
+        newPadding.layoutParams.height = paddingHeight
+        newPadding.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
         newFrag.layoutParams.height = height
         newFrag.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
 
-        //add fragment to created frame
+        //initialize fragment of type fragmentType
         val fragToAdd = when(fragmentType) {
             "alarmDisplay" -> { alarmDisplay() }
             "mediaPlayer" -> { mediaPlayer() }
             else -> { testingFragment() }
         }
-        fragments.add(fragToAdd)
-        addFragment(fragToAdd, newFrag.id)
-    }
-
-    //creates a fragment at top of the screen of fragmentType
-    private fun createTopFragment(fragmentType:String,height:Int=350){
-
-        val newFrag = FrameLayout(this)
-        newFrag.id = ViewCompat.generateViewId()
-        viewIDs.add(newFrag.id)
-        mainLayout.addView(newFrag,indexOfTop)
-        newFrag.layoutParams.height = height
-        newFrag.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
-
-        val newPadding = FrameLayout(this)
-        newPadding.id = ViewCompat.generateViewId()
-        viewIDs.add(newPadding.id)
-        mainLayout.addView(newPadding,indexOfTop)
-        newPadding.layoutParams.height = paddingHeight
-        newPadding.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
 
         //add fragment to created frame
-        val fragToAdd = when(fragmentType) {
-            "alarmDisplay" -> { alarmDisplay() }
-            "mediaPlayer" -> { mediaPlayer() }
-            else -> { testingFragment() }
-        }
         fragments.add(fragToAdd)
         addFragment(fragToAdd, newFrag.id)
     }
-
 
     //helper functions to add fragments more easily
     private inline fun FragmentManager.inTransaction(func: FragmentTransaction.() -> Unit) {

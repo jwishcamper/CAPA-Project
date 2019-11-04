@@ -2,7 +2,6 @@ package com.example.capaproject;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.util.Log;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
@@ -12,9 +11,6 @@ public class ActivityIntentService extends IntentService {
 
     public ActivityIntentService() {
         super("ActivityIntentService");
-    }
-    public ActivityIntentService(String name) {
-        super(name);
     }
 
     @Override

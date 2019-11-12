@@ -1,32 +1,18 @@
 package com.example.capaproject
 
 import android.app.ActionBar
-import android.app.Activity
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.graphics.Point
 import android.os.Bundle
-import android.os.Handler
-import android.provider.Settings
 import android.view.View
 import android.view.View.GONE
 import android.widget.FrameLayout
-import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.location.ActivityRecognition
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
 import kotlin.concurrent.fixedRateTimer
-import android.R.attr.y
-import android.R.attr.x
-import android.graphics.Point
-import android.view.Display
 
 //space between fragments
 const val paddingHeight = 35
@@ -42,7 +28,7 @@ var fragments = mutableListOf<Fragment>()
 class MainActivity : AppCompatActivity() {
 
     //helper object to determine user state
-    lateinit var stateHelper: stateChange
+    private lateinit var stateHelper: stateChange
 
     //currentActivity is current most probable activity
 companion object{
@@ -54,10 +40,29 @@ companion object{
 
         stateHelper = stateChange(this)
 
-        createFragment("alarmDisplay",getScreenHeight()/7)
-        createFragment("mediaPlayer",getScreenHeight()/7, indexOfTop)
+        val hashMap : HashMap<String, Int> = HashMap()
+        hashMap["alarmDisplay"] = 34
+        hashMap["mediaPlayer"] = 50
+
+        buildGUI(hashMap)
+
         updateContext()
 
+    }
+
+    fun buildGUI(frags : HashMap<String, Int>){
+        removeAllFragments()
+        val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
+        for (entry in sorted) {
+            createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
+        }
+    }
+
+    private fun getAppropriateHeight(fragmentType : String) : Int{
+        return when(fragmentType){
+            in "alarmDisplay", "mediaPlayer" -> getScreenHeight()/7
+            else -> 350
+        }
     }
 
     //updates textbox context every 1000 milliseconds

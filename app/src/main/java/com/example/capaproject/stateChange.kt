@@ -7,21 +7,22 @@ import android.os.Bundle
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.ActivityRecognition
+import java.text.SimpleDateFormat
 import java.util.*
 
 //goal of stateChange class - use information such as time, day of week,
 //location, and activity state to guess at the context of the user
-class stateChange(val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
+@Suppress("DEPRECATION")
+class stateChange(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
 
 
-    var mApiClient: GoogleApiClient
+    private var mApiClient: GoogleApiClient = GoogleApiClient.Builder(context)
+        .addApi(ActivityRecognition.API)
+        .addConnectionCallbacks(this)
+        .addOnConnectionFailedListener(this)
+        .build()
+
     init {
-        mApiClient = GoogleApiClient.Builder(context)
-            .addApi(ActivityRecognition.API)
-            .addConnectionCallbacks(this)
-            .addOnConnectionFailedListener(this)
-            .build()
-
         mApiClient.connect()
     }
 
@@ -60,7 +61,7 @@ class stateChange(val context : Context) : GoogleApiClient.ConnectionCallbacks, 
             hour=12
         return "$hour:$minString $ampm"
     }
-    //returns day as string eg: "Thursday Afternoon"
+    //returns day of week as string eg: "Thursday Afternoon"
     //if you just want the day, copy the first line of the function
     private fun getDay() : String {
         var s = Calendar.getInstance().getDisplayName(Calendar.DAY_OF_WEEK,Calendar.LONG,Locale.getDefault()) as String
@@ -74,8 +75,13 @@ class stateChange(val context : Context) : GoogleApiClient.ConnectionCallbacks, 
         return s
     }
 
+    private fun getDate(): String {
+        return SimpleDateFormat("MM-dd-yyyy", Locale.getDefault()).format(Date())
+    }
+
 
     fun getContext() : String{
-        return getDay() + ", " + getDateTime() + "     Activity: " + MainActivity.currentActivity
+        return "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
+        //return "${getDate()}     Activity: ${MainActivity.currentActivity}"
     }
 }

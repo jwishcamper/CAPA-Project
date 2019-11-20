@@ -3,6 +3,7 @@ package com.example.capaproject
 import android.app.ActionBar
 import android.graphics.Point
 import android.os.Bundle
+import android.view.Display
 import android.view.View
 import android.view.View.GONE
 import android.widget.FrameLayout
@@ -29,6 +30,8 @@ class MainActivity : AppCompatActivity() {
 
     //helper object to determine user state
     private lateinit var stateHelper: stateChange
+    private var screenHeight : Int = 0
+    private lateinit var guiHelper : CAPAstate
 
     //currentActivity is current most probable activity
 companion object{
@@ -37,15 +40,10 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        screenHeight = getScreenHeight()
         stateHelper = stateChange(this)
-
-        val hashMap : HashMap<String, Int> = HashMap()
-        hashMap["alarmDisplay"] = 34
-        hashMap["mediaPlayer"] = 50
-
-        buildGUI(hashMap)
-
+        guiHelper = CAPAstate(this)
+        guiHelper.updateUserState("atWork")
         updateContext()
 
     }
@@ -60,7 +58,7 @@ companion object{
 
     private fun getAppropriateHeight(fragmentType : String) : Int{
         return when(fragmentType){
-            in "alarmDisplay", "mediaPlayer" -> getScreenHeight()/7
+            in "alarmDisplay", "mediaPlayer" -> screenHeight/7
             else -> 350
         }
     }
@@ -71,12 +69,18 @@ companion object{
         fixedRateTimer("timer",false,0,1000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getContext()
+                if(currentActivity == "Still"){
+                    guiHelper.updateUserState("default")
+                }
+                else if(currentActivity!="Still"){
+                    guiHelper.updateUserState("atWork")
+                }
             }
         }
     }
 
     private fun getScreenHeight() : Int{
-        val display = windowManager.defaultDisplay
+        var display = windowManager.defaultDisplay
         val size = Point()
         display.getSize(size)
         return size.y

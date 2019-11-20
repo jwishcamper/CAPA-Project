@@ -26,35 +26,35 @@ public class ActivityIntentService extends IntentService {
             case DetectedActivity.IN_VEHICLE: {
                 //Log.e( "ActivityRecogition", "In Vehicle: " + probableActivities.getConfidence() );
                 //MainActivity.t.setText("In Vehicle: " + probableActivities.getConfidence());
-                MainActivity.Companion.setCurrentActivity("In Vehicle: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("In Vehicle");
                 break;
             }
             case DetectedActivity.ON_BICYCLE: {
-                MainActivity.Companion.setCurrentActivity("On Bicycle: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("On Bicycle");
                 break;
             }
             case DetectedActivity.ON_FOOT: {
-                MainActivity.Companion.setCurrentActivity("On Foot: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("On Foot");
                 break;
             }
             case DetectedActivity.RUNNING: {
-                MainActivity.Companion.setCurrentActivity("Running: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("Running");
                 break;
             }
             case DetectedActivity.STILL: {
-                MainActivity.Companion.setCurrentActivity("Still: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("Still");
                 break;
             }
             case DetectedActivity.TILTING: {
-                MainActivity.Companion.setCurrentActivity("Tilting: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("Tilting");
                 break;
             }
             case DetectedActivity.WALKING: {
-                MainActivity.Companion.setCurrentActivity("Walking: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("Walking");
                 break;
             }
             case DetectedActivity.UNKNOWN: {
-                MainActivity.Companion.setCurrentActivity("Unknown: " + probableActivities.getConfidence() +"%");
+                MainActivity.Companion.setCurrentActivity("Unknown");
                 break;
             }
         }

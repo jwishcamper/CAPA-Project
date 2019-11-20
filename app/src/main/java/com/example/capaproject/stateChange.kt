@@ -23,6 +23,7 @@ class stateChange(private val context : Context) : GoogleApiClient.ConnectionCal
         .build()
 
     init {
+        //comment following line out for testing on emulator:
         mApiClient.connect()
     }
 

@@ -1,17 +1,10 @@
 package com.example.capaproject
 
-import android.content.Context
-import android.net.Uri
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.TextView
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_testing.*
-import java.util.*
+import androidx.fragment.app.Fragment
 
 
 class testingFragment : Fragment() {

@@ -3,6 +3,8 @@ package com.example.capaproject
 import android.app.ActionBar
 import android.graphics.Point
 import android.os.Bundle
+import android.provider.ContactsContract
+import android.util.Log
 import android.view.Display
 import android.view.View
 import android.view.View.GONE
@@ -37,15 +39,28 @@ class MainActivity : AppCompatActivity() {
 companion object{
     var currentActivity : String = "None"
 }
+    val databaseHandler = DatabaseHandler(this)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        databaseHandler.deleteSurveyInfo()
+        databaseHandler.addSurveyInfo("Address", "Bothell")
+        //databaseHandler.addSurveyInfo("Birthday", "01/17")
+        databaseHandler.updateSurveyInfo("Address", "Bellevue")
+        val cursor = databaseHandler.getSurveyInfo()
+        cursor!!.moveToFirst()
+        while(!cursor.isAfterLast){
+            var question = cursor.getString(cursor.getColumnIndex(SurveyReaderContract.SurveyEntry.COLUMN_QUESTION))
+            var answer = cursor.getString(cursor.getColumnIndex(SurveyReaderContract.SurveyEntry.COLUMN_ANSWER))
+            Log.d("testQuestion", question)
+            Log.d("testAnswer", answer)
+            cursor.moveToNext()
+        }
         screenHeight = getScreenHeight()
         stateHelper = stateChange(this)
         guiHelper = CAPAstate(this)
         guiHelper.updateUserState("atWork")
         updateContext()
-
     }
 
     fun buildGUI(frags : HashMap<String, Int>){
@@ -72,7 +87,7 @@ companion object{
                 if(currentActivity == "Still"){
                     guiHelper.updateUserState("default")
                 }
-                else if(currentActivity!="Still"){
+                else if(currentActivity!="Still") {
                     guiHelper.updateUserState("atWork")
                 }
             }
@@ -153,4 +168,8 @@ companion object{
         supportFragmentManager.inTransaction { remove(fragment) }
     }
 
+    override fun onDestroy() {
+        databaseHandler!!.close()
+        super.onDestroy()
+    }
 }

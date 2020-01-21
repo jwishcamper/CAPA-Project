@@ -24,7 +24,7 @@ class stateChange(private val context : Context) : GoogleApiClient.ConnectionCal
 
     init {
         //comment following line out for testing on emulator:
-        mApiClient.connect()
+        //mApiClient.connect()
     }
 
     override fun onConnected(bundle: Bundle?) {

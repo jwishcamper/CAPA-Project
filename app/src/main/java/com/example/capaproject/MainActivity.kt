@@ -72,6 +72,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var stateHelper: stateChange
     private lateinit var guiHelper : CAPAstate
 
+    private lateinit var databaseHandler : DatabaseHandler
+
     //currently unused from fragment logic
     /*
     private var screenHeight : Int = 0
@@ -89,16 +91,23 @@ companion object{
 
         mainlayout = findViewById(R.id.mainLayout)
 
+        //database variables
+        databaseHandler = DatabaseHandler(this)
+
+        //NUKE THE DATABASE!!!!!
+        //databaseHandler.deleteInfo()
+
+        //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = AppWidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
+
         //screenHeight = getScreenHeight()
         stateHelper = stateChange(this)
-        guiHelper = CAPAstate(this)
+        guiHelper = CAPAstate(this,databaseHandler)
         guiHelper.updateUserState("atWork")
         updateContext()
-
 
         val compSearch = ComponentName(
             "com.google.android.googlequicksearchbox",
@@ -231,6 +240,11 @@ companion object{
         currentWidgetList.add(appWidgetInfo)
     }
 
+    override fun onPause(){
+        super.onPause()
+        databaseHandler.addState(guiHelper.getState(),guiHelper.getList())
+        //save current UI state to database here
+    }
     override fun onStart() {
         super.onStart()
         mAppWidgetHost.startListening()
@@ -242,9 +256,51 @@ companion object{
     }
 
     private fun removeWidget(hostView: AppWidgetHostView) {
-        println(hostView.appWidgetId)
+        //println(hostView.appWidgetId)
         mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)
         mainlayout.removeView(hostView)
+    }
+    internal fun addEmptyData(pickIntent: Intent) {
+        val customInfo = ArrayList<AppWidgetProviderInfo>()
+        pickIntent.putParcelableArrayListExtra(AppWidgetManager.EXTRA_CUSTOM_INFO, customInfo)
+        val customExtras = ArrayList<Bundle>()
+        pickIntent.putParcelableArrayListExtra(AppWidgetManager.EXTRA_CUSTOM_EXTRAS, customExtras)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val id = item.itemId
+
+        if (id == R.id.action_setting) {
+
+            var map = HashMap<String, String>()
+
+
+            //load info from database
+            map = databaseHandler.getSurveyInfo()
+            if(map.isEmpty()) {
+                map["Home"] = ""
+                map["Work"] = ""
+                map["School"] = ""
+                map["Gender"] = "Other"
+                map["BirthDay"] = "01/01/1930"
+            }
+
+            val surveyOne = Survey(map,this)
+
+
+
+            val intent = Intent(this, surveyOne.javaClass)
+            startActivity(intent)
+            Toast.makeText(this, "User Survey", Toast.LENGTH_SHORT).show()
+
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 
 

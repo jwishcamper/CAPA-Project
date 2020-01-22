@@ -9,8 +9,8 @@ class atWorkState(val newCstate: CAPAstate,val context: MainActivity) : CAPAhand
         //make a hash map for default workState, then build GUI
         val hashMap : HashMap<ComponentName, Double> = HashMap()
         val compAnalogClock = ComponentName(
-            "com.google.android.deskclock",
-            "com.android.alarmclock.AnalogAppWidgetProvider"
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
         )
         val compMusic = ComponentName(
             "com.google.android.music",

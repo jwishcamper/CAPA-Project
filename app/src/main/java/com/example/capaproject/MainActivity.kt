@@ -83,24 +83,47 @@ class MainActivity : AppCompatActivity() {
 companion object{
     var currentActivity : String = "None"
 }
-    val databaseHandler = DatabaseHandler(this)
+    private val databaseHandler = DatabaseHandler(this)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        databaseHandler.deleteSurveyInfo()
-        databaseHandler.addSurveyInfo("Address", "Bothell")
+        databaseHandler.deleteInfo()
+        //databaseHandler.addSurveyInfo("Address", "Bothell")
         //databaseHandler.addSurveyInfo("Birthday", "01/17")
-        databaseHandler.updateSurveyInfo("Address", "Bellevue")
-        val cursor = databaseHandler.getSurveyInfo()
-        cursor!!.moveToFirst()
+        //databaseHandler.updateSurveyInfo("Address", "Bellevue")
+        val testComp = ComponentName(
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
+        )
+
+        //val testDouble = 35.2
+        //val map: HashMap<ComponentName, Double> = HashMap()
+        //map[testComp] = testDouble
+        //databaseHandler.addState("atWork", map)
+        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
+        //Log.d("test", map2.toString())
+        /*cursor!!.moveToFirst()
         while(!cursor.isAfterLast){
-            var question = cursor.getString(cursor.getColumnIndex(SurveyReaderContract.SurveyEntry.COLUMN_QUESTION))
-            var answer = cursor.getString(cursor.getColumnIndex(SurveyReaderContract.SurveyEntry.COLUMN_ANSWER))
+            val pkg = cursor.getString(cursor.getColumnIndex("Package"))
+            val cls = cursor.getString(cursor.getColumnIndex("Class"))
+            val weight = cursor.getDouble(cursor.getColumnIndex("Weight"))
+            val compName = ComponentName(
+                pkg,
+                cls
+            )
+            map[compName] = weight
+            Log.d("test", map.toString())
+            cursor.moveToNext()
+        }
+        cursor.close()*/
+
+        /*while(!cursor.isAfterLast){
+            var question = cursor.getString(cursor.getColumnIndex(WorkReaderContract.WorkEntry.COLUMN_PACKAGE))
+            var answer = cursor.getString(cursor.getColumnIndex(WorkReaderContract.WorkEntry.COLUMN_WEIGHT))
             Log.d("testQuestion", question)
             Log.d("testAnswer", answer)
             cursor.moveToNext()
-        }
-        screenHeight = getScreenHeight()
+        }*/
 
         mainlayout = findViewById(R.id.mainLayout)
 

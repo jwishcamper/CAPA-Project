@@ -96,34 +96,12 @@ companion object{
             "com.google.android.googlequicksearchbox.SearchWidgetProvider"
         )
 
-        //val testDouble = 35.2
-        //val map: HashMap<ComponentName, Double> = HashMap()
-        //map[testComp] = testDouble
+        val testDouble = 35.2
+        val map: HashMap<ComponentName, Double> = HashMap()
+        map[testComp] = testDouble
         //databaseHandler.addState("atWork", map)
-        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
-        //Log.d("test", map2.toString())
-        /*cursor!!.moveToFirst()
-        while(!cursor.isAfterLast){
-            val pkg = cursor.getString(cursor.getColumnIndex("Package"))
-            val cls = cursor.getString(cursor.getColumnIndex("Class"))
-            val weight = cursor.getDouble(cursor.getColumnIndex("Weight"))
-            val compName = ComponentName(
-                pkg,
-                cls
-            )
-            map[compName] = weight
-            Log.d("test", map.toString())
-            cursor.moveToNext()
-        }
-        cursor.close()*/
-
-        /*while(!cursor.isAfterLast){
-            var question = cursor.getString(cursor.getColumnIndex(WorkReaderContract.WorkEntry.COLUMN_PACKAGE))
-            var answer = cursor.getString(cursor.getColumnIndex(WorkReaderContract.WorkEntry.COLUMN_WEIGHT))
-            Log.d("testQuestion", question)
-            Log.d("testAnswer", answer)
-            cursor.moveToNext()
-        }*/
+        val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
+        Log.d("test", map2.toString())
 
         mainlayout = findViewById(R.id.mainLayout)
 

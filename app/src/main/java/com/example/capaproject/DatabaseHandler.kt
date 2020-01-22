@@ -75,7 +75,6 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL(SURVEY_DELETE_ENTRIES)
         db.execSQL(WORK_DELETE_ENTRIES)
         onCreate(db)
     }
@@ -109,15 +108,19 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }*/
 
     //val dbHelper = DatabaseHandler(context)
-    fun addSurveyInfo(question: String, answer: String){
+    fun addSurveyInfo(map: HashMap<String, String>){
         val db = this.writableDatabase
-        var selectQuery = "SELECT * FROM ${SurveyEntry.TABLE_NAME}"
 
-        val values = ContentValues().apply {
-            put(SurveyEntry.COLUMN_QUESTION, question)
-            put(SurveyEntry.COLUMN_ANSWER, answer)
+        for(entry in map){
+            val question = entry.key
+            val answer = entry.value
+
+            val values = ContentValues().apply{
+                put(SurveyEntry.COLUMN_QUESTION, question)
+                put(SurveyEntry.COLUMN_ANSWER, answer)
+            }
+            db.insert(SurveyEntry.TABLE_NAME, null, values)
         }
-        db.insert(SurveyEntry.TABLE_NAME, null, values)
         db.close()
     }
 
@@ -126,24 +129,14 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         onUpgrade(db, 1, 1)
     }
 
-    fun updateSurveyInfo(question: String, answer: String){
+    fun updateSurveyInfo(map: HashMap<String, String>){
         val db = this.writableDatabase
-        val values = ContentValues().apply {
-            //put(COLUMN_QUESTION, question)
-            put(SurveyEntry.COLUMN_ANSWER, answer)
-        }
-        db.update(SurveyEntry.TABLE_NAME, values,
-            "$COLUMN_QUESTION=?", arrayOf(question))
+
+        db.execSQL(SURVEY_DELETE_ENTRIES)
+        addSurveyInfo(map)
+
         db.close()
     }
-
-    /*fun getState(stateName: String): HashMap<ComponentName, Double>{
-        var map: HashMap<ComponentName, Double> = HashMap()
-        if(stateName == "Work") {
-            map = getWorkState()
-        }
-        return map
-    }*/
 
     fun getState(stateName: String): HashMap<ComponentName, Double>{
         val db = this.writableDatabase
@@ -166,19 +159,19 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return map
     }
 
-    fun getSurveyInfo(): Cursor?{
+    fun getSurveyInfo(): HashMap<String, String>{
         val db = this.readableDatabase
+        val map: HashMap<String, String> = HashMap()
         val selectQuery = "SELECT * FROM ${SurveyEntry.TABLE_NAME}"
-        return db.rawQuery(selectQuery, null)
-        /*if(cursor.moveToFirst()) {
-            do {
-                test =
-                    cursor.getString(cursor.getColumnIndex(SurveyReaderContract.SurveyEntry.COLUMN_QUESTION))
-                arrayList.add(test)
-            } while (cursor.moveToNext())
-            //test = cursor.getString(1).toString()
-            Log.d("test", arrayList.toString())
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor!!.moveToFirst()
+        while(!cursor.isAfterLast){
+            val question = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_QUESTION))
+            val answer = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+            map[question] = answer
+            cursor.moveToNext()
         }
-        cursor.close()*/
+        cursor.close()
+        return map
     }
 }

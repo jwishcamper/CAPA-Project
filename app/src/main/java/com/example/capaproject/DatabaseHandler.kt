@@ -13,7 +13,7 @@ import androidx.lifecycle.Transformations.map
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
 import com.example.capaproject.SurveyReaderContract.SurveyEntry.COLUMN_QUESTION
 //import com.example.capaproject.WorkReaderContract.WorkEntry
-import com.example.capaproject.StateReaderContract.StateEntry
+import com.example.capaproject.WorkReaderContract.WorkEntry
 
 /*
 val DATABASE_NAME = "Database"
@@ -24,7 +24,7 @@ val SURVEY_COL_ANSWER = "Answer"
 val WORK_COL_WIDGET = "Widget"
 val WORK_COL_WEIGHT = "Weight"
 */
-const val WORK_TABLE_NAME = "atWork"
+//const val WORK_TABLE_NAME = "atWork"
 
 object SurveyReaderContract{
     object SurveyEntry : BaseColumns{
@@ -34,39 +34,39 @@ object SurveyReaderContract{
     }
 }
 
-object StateReaderContract{
+/*object StateReaderContract{
     object StateEntry : BaseColumns{
         //const val TABLE_NAME = ""
         const val COLUMN_PACKAGE = "Package"
         const val COLUMN_CLASS = "Class"
         const val COLUMN_WEIGHT = "Weight"
     }
-}
-
-/*object WorkReaderContract{
-    object WorkEntry : BaseColumns{
-        const val TABLE_NAME = "Work"
-        //const val COLUMN_PACKAGE = "Package"
-        //const val COLUMN_CLASS = "Class"
-        //const val COLUMN_WEIGHT = "Weight"
-    }
 }*/
 
+object WorkReaderContract{
+    object WorkEntry : BaseColumns{
+        const val TABLE_NAME = "Work"
+        const val COLUMN_PACKAGE = "Package"
+        const val COLUMN_CLASS = "Class"
+        const val COLUMN_WEIGHT = "Weight"
+    }
+}
+
 private const val SURVEY_CREATE_ENTRIES =
-    "CREATE TABLE ${SurveyEntry.TABLE_NAME} (" +
+    "CREATE TABLE IF NOT EXISTS ${SurveyEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${SurveyEntry.COLUMN_QUESTION} TEXT," +
             "${SurveyEntry.COLUMN_ANSWER} TEXT)"
 
 private const val WORK_CREATE_ENTRIES =
-    "CREATE TABLE $WORK_TABLE_NAME (" +
+    "CREATE TABLE IF NOT EXISTS ${WorkEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
-            "${StateEntry.COLUMN_PACKAGE} TEXT," +
-            "${StateEntry.COLUMN_CLASS} TEXT," +
-            "${StateEntry.COLUMN_WEIGHT} DOUBLE)"
+            "${WorkEntry.COLUMN_PACKAGE} TEXT," +
+            "${WorkEntry.COLUMN_CLASS} TEXT," +
+            "${WorkEntry.COLUMN_WEIGHT} DOUBLE)"
 
 private const val SURVEY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${SurveyEntry.TABLE_NAME}"
-private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS $WORK_TABLE_NAME"
+private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${WorkEntry.TABLE_NAME}"
 
 class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     override fun onCreate(db: SQLiteDatabase) {
@@ -83,8 +83,9 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         const val DATABASE_NAME = "Database"
     }
 
-    fun addState(stateName: String, map: HashMap<ComponentName, Double>){
+    fun addWorkInfo(map: HashMap<ComponentName, Double>){
         val db = this.writableDatabase
+        db.execSQL(WORK_CREATE_ENTRIES)
 
         for(entry in map){
             val pkg = entry.key.packageName
@@ -92,13 +93,19 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             val weight = entry.value
 
             val values = ContentValues().apply{
-                put(StateEntry.COLUMN_PACKAGE, pkg)
-                put(StateEntry.COLUMN_CLASS, cls)
-                put(StateEntry.COLUMN_WEIGHT, weight)
+                put(WorkEntry.COLUMN_PACKAGE, pkg)
+                put(WorkEntry.COLUMN_CLASS, cls)
+                put(WorkEntry.COLUMN_WEIGHT, weight)
             }
-            db.insert(stateName, null, values)
+            db.insert(WorkEntry.TABLE_NAME, null, values)
         }
         db.close()
+    }
+
+    fun addState(stateName: String, map: HashMap<ComponentName, Double>){
+        when(stateName){
+            "atWork" -> addWorkInfo(map)
+        }
     }
 
     /*fun addState(stateName: String, map: HashMap<ComponentName, Double>){
@@ -110,6 +117,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     //val dbHelper = DatabaseHandler(context)
     fun addSurveyInfo(map: HashMap<String, String>){
         val db = this.writableDatabase
+        db.execSQL(SURVEY_CREATE_ENTRIES)
 
         for(entry in map){
             val question = entry.key
@@ -133,6 +141,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val db = this.writableDatabase
 
         db.execSQL(SURVEY_DELETE_ENTRIES)
+        db.execSQL(SURVEY_CREATE_ENTRIES)
         addSurveyInfo(map)
 
         db.close()
@@ -161,6 +170,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun getSurveyInfo(): HashMap<String, String>{
         val db = this.readableDatabase
+        db.execSQL(SURVEY_CREATE_ENTRIES)
         val map: HashMap<String, String> = HashMap()
         val selectQuery = "SELECT * FROM ${SurveyEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)

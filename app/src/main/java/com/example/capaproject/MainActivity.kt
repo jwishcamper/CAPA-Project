@@ -87,7 +87,7 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        databaseHandler.deleteInfo()
+        //databaseHandler.deleteInfo()
         //databaseHandler.addSurveyInfo("Address", "Bothell")
         //databaseHandler.addSurveyInfo("Birthday", "01/17")
         //databaseHandler.updateSurveyInfo("Address", "Bellevue")
@@ -99,7 +99,7 @@ companion object{
         val testDouble = 35.2
         val map: HashMap<ComponentName, Double> = HashMap()
         map[testComp] = testDouble
-        //databaseHandler.addState("atWork", map)
+        databaseHandler.addState("atWork", map)
         val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
         Log.d("test", map2.toString())
 

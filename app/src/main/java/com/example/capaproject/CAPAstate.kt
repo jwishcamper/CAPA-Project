@@ -3,8 +3,8 @@ package com.example.capaproject
 import android.content.ComponentName
 import android.util.Log
 
-class CAPAstate(context:MainActivity) {
-    //this hashmap stores the current widgets in form String:int, where int is the weight
+class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
+    //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<ComponentName, Double> = HashMap()
     //List of possible states stores as CAPAhandler objects
     var atWork : CAPAhandler = atWorkState(this,context)
@@ -19,6 +19,9 @@ class CAPAstate(context:MainActivity) {
     }
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
+        //save hashmap for current state to database
+        db.addState(getState(),stateMap)
+
         when(newState){
             in "atWork" -> setState(atWork)
             else -> setState(default)
@@ -29,6 +32,8 @@ class CAPAstate(context:MainActivity) {
     private fun setState(newState : CAPAhandler){
         if(newState != currentState) {
             currentState = newState
+            //load the user prefs from database
+            stateMap = db.getState(getState())
             if(stateMap.isEmpty())
                 currentState.updateGUI()
             else
@@ -39,12 +44,15 @@ class CAPAstate(context:MainActivity) {
     //called when a user adds a custom widget to state.
     fun addWidget(name:ComponentName){
         //add new widget name to hashmap
+        //Logic to add new widget at slot 0 then change weight of next one up
         val sorted = stateMap.toList().sortedBy { (_, value) -> value}.toMap()
         val firstKey = sorted.keys.toTypedArray()[0]
         val secondKey = sorted.keys.toTypedArray()[1]
         stateMap[firstKey] = (stateMap[firstKey]!!+stateMap[secondKey]!!)/2
         stateMap[name]=0.0
 
+
+        //for debugging
         /*
         //print keys/values for testing
         for (entry in stateMap) {
@@ -56,9 +64,6 @@ class CAPAstate(context:MainActivity) {
         //refresh display based on new hashmap.
         refresh()
 
-
-        //save hashmap to database:
-        //use nicks database object to save stateMap to database here
     }
     private fun refresh(){
         currentState.updateGUI(stateMap)

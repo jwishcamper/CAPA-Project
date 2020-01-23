@@ -75,6 +75,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL(SURVEY_DELETE_ENTRIES)
         db.execSQL(WORK_DELETE_ENTRIES)
         onCreate(db)
     }
@@ -149,6 +150,8 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun getState(stateName: String): HashMap<ComponentName, Double>{
         val db = this.writableDatabase
+        db.execSQL(WORK_CREATE_ENTRIES)
+
         val map: HashMap<ComponentName, Double> = HashMap()
         val selectQuery = "SELECT * FROM $stateName"
         val cursor = db.rawQuery(selectQuery, null)
@@ -185,3 +188,4 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return map
     }
 }
+

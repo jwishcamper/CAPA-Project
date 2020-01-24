@@ -3,12 +3,12 @@ package com.example.capaproject
 import android.content.ComponentName
 import android.util.Log
 
-class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
+class CAPAstate(context:MainActivity, val db : DatabaseHandler, val prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<ComponentName, Double> = HashMap()
     //List of possible states stores as CAPAhandler objects
-    var atWork : CAPAhandler = atWorkState(this,context)
-    var default : CAPAhandler = defaultState(this,context)
+    var atWork : CAPAhandler = atWorkState(this,context,prefs)
+    var default : CAPAhandler = defaultState(this,context,prefs)
 
     //current state will refer to one of the above possible state variables
     var currentState : CAPAhandler
@@ -65,7 +65,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
         refresh()
 
     }
-    private fun refresh(){
+    fun refresh(){
         currentState.updateGUI(stateMap)
     }
     //returns a hashmap variable with current state - to save to database

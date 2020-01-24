@@ -15,15 +15,7 @@ import com.example.capaproject.SurveyReaderContract.SurveyEntry.COLUMN_QUESTION
 //import com.example.capaproject.WorkReaderContract.WorkEntry
 import com.example.capaproject.StateReaderContract.StateEntry
 
-/*
-val DATABASE_NAME = "Database"
-val SURVEY_TABLE_NAME = "Survey"
-val WORK_TABLE_NAME = "User State"
-val SURVEY_COL_QUESTION = "Question"
-val SURVEY_COL_ANSWER = "Answer"
-val WORK_COL_WIDGET = "Widget"
-val WORK_COL_WEIGHT = "Weight"
-*/
+
 const val WORK_TABLE_NAME = "atWork"
 
 object SurveyReaderContract{
@@ -43,14 +35,7 @@ object StateReaderContract{
     }
 }
 
-/*object WorkReaderContract{
-    object WorkEntry : BaseColumns{
-        const val TABLE_NAME = "Work"
-        //const val COLUMN_PACKAGE = "Package"
-        //const val COLUMN_CLASS = "Class"
-        //const val COLUMN_WEIGHT = "Weight"
-    }
-}*/
+
 
 private const val SURVEY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${SurveyEntry.TABLE_NAME} (" +

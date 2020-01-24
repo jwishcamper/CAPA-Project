@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:padding="16dp"
         tools:layout_editor_absoluteX="213dp"
         tools:layout_editor_absoluteY="185dp">
 
@@ -100,15 +101,15 @@
                 android:id="@+id/month"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:entries="@array/month"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:entries="@array/month" />
 
             <Spinner
                 android:id="@+id/date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:entries="@array/date"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:entries="@array/date" />
 
             <Spinner
                 android:id="@+id/year"
@@ -133,8 +134,8 @@
                 android:id="@+id/gender"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:entries="@array/gender"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:entries="@array/gender" />
         </LinearLayout>
 
         <Button

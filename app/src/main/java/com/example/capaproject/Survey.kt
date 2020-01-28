@@ -29,7 +29,7 @@ class Survey() : AppCompatActivity() {
             val homeAddr: EditText = findViewById(R.id.home)
             val workAddr: EditText = findViewById(R.id.work)
             val schoolAddr: EditText = findViewById(R.id.school)
-            val genderSpin: Spinner = findViewById(R.id.gender)
+            val genderSpin: Spinner = this.findViewById(R.id.gender)
             val monthSpin: Spinner = findViewById(R.id.month)
             val daySpin: Spinner = findViewById(R.id.date)
             val yearSpin: Spinner = findViewById(R.id.year)

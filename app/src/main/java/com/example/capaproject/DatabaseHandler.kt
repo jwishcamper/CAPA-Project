@@ -1,17 +1,12 @@
 package com.example.capaproject
 
 import android.content.ComponentName
-import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
-import android.util.Log
-import androidx.lifecycle.Transformations.map
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
-import com.example.capaproject.SurveyReaderContract.SurveyEntry.COLUMN_QUESTION
 //import com.example.capaproject.WorkReaderContract.WorkEntry
 import com.example.capaproject.WorkReaderContract.WorkEntry
 
@@ -84,7 +79,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         const val DATABASE_NAME = "Database"
     }
 
-    fun addWorkInfo(map: HashMap<ComponentName, Double>){
+    private fun updateWorkInfo(map: HashMap<ComponentName, Double>){
         val db = this.writableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
 
@@ -98,14 +93,14 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 put(WorkEntry.COLUMN_CLASS, cls)
                 put(WorkEntry.COLUMN_WEIGHT, weight)
             }
-            db.insert(WorkEntry.TABLE_NAME, null, values)
+            db.replace(WorkEntry.TABLE_NAME, null, values)
         }
         db.close()
     }
 
-    fun addState(stateName: String, map: HashMap<ComponentName, Double>){
+    fun updateState(stateName: String, map: HashMap<ComponentName, Double>){
         when(stateName){
-            "atWork" -> addWorkInfo(map)
+            "atWork" -> updateWorkInfo(map)
         }
     }
 
@@ -115,8 +110,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }*/
 
-    //val dbHelper = DatabaseHandler(context)
-    fun addSurveyInfo(map: HashMap<String, String>){
+    /*fun addSurveyInfo(map: HashMap<String, String>){
         val db = this.writableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
 
@@ -131,7 +125,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             db.insert(SurveyEntry.TABLE_NAME, null, values)
         }
         db.close()
-    }
+    }*/
 
     fun deleteInfo(){
         val db = this.writableDatabase
@@ -140,20 +134,34 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun updateSurveyInfo(map: HashMap<String, String>){
         val db = this.writableDatabase
-
-        db.execSQL(SURVEY_DELETE_ENTRIES)
         db.execSQL(SURVEY_CREATE_ENTRIES)
-        addSurveyInfo(map)
 
+        for(entry in map){
+            val question = entry.key
+            val answer = entry.value
+
+            val values = ContentValues().apply{
+                put(SurveyEntry.COLUMN_QUESTION, question)
+                put(SurveyEntry.COLUMN_ANSWER, answer)
+            }
+            db.replace(SurveyEntry.TABLE_NAME, null, values)
+        }
         db.close()
     }
 
-    fun getState(stateName: String): HashMap<ComponentName, Double>{
+    fun getStateInfo(stateName: String): HashMap<ComponentName, Double>? {
+        return when (stateName) {
+            "atWork" -> getWorkInfo()
+            else -> return null
+        }
+    }
+
+    private fun getWorkInfo(): HashMap<ComponentName, Double> {
         val db = this.writableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
 
         val map: HashMap<ComponentName, Double> = HashMap()
-        val selectQuery = "SELECT * FROM $stateName"
+        val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor!!.moveToFirst()
         while(!cursor.isAfterLast){

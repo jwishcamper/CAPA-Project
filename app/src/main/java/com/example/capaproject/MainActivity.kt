@@ -1,47 +1,22 @@
 package com.example.capaproject
 
-import android.app.ActionBar
 import android.content.ComponentName
-import android.content.DialogInterface
-import android.graphics.Point
 import android.os.Bundle
-import android.text.InputType
 import android.util.Log
-import android.view.Display
 import android.view.View
-import android.view.View.GONE
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
-import com.google.android.material.textfield.TextInputLayout
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
 import kotlin.collections.HashMap
 import kotlin.concurrent.fixedRateTimer
 import android.app.Activity
-import android.app.PendingIntent.getActivity
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
-import android.content.pm.ComponentInfo
 import android.view.*
-import kotlinx.android.synthetic.main.activity_main.*
 import java.util.ArrayList
-import kotlin.concurrent.fixedRateTimer
-import androidx.core.app.ActivityCompat.startActivityForResult
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.os.UserHandle
 
 //currently unused from fragment logic
 /*
@@ -85,7 +60,7 @@ class MainActivity : AppCompatActivity() {
 companion object{
     var currentActivity : String = "None"
 }
-    private val databaseHandler = DatabaseHandler(this)
+    //private val databaseHandler = DatabaseHandler(this)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -98,12 +73,12 @@ companion object{
             "com.google.android.googlequicksearchbox.SearchWidgetProvider"
         )
 
-        val testDouble = 35.2
-        val map: HashMap<ComponentName, Double> = HashMap()
-        map[testComp] = testDouble
-        databaseHandler.addState("atWork", map)
-        val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
-        Log.d("test", map2.toString())
+        //val testDouble = 35.2
+        //val map: HashMap<ComponentName, Double> = HashMap()
+        //map[testComp] = testDouble
+        //databaseHandler.addState("atWork", map)
+        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
+        //Log.d("test", map2.toString())
 
         mainlayout = findViewById(R.id.mainLayout)
 
@@ -258,7 +233,7 @@ companion object{
 
     override fun onPause(){
         super.onPause()
-        databaseHandler.addState(guiHelper.getState(),guiHelper.getList())
+        databaseHandler.updateState(guiHelper.getState(),guiHelper.getList())
         //save current UI state to database here
     }
     override fun onStart() {

@@ -1,7 +1,6 @@
 package com.example.capaproject
 
 import android.content.ComponentName
-import android.util.Log
 
 class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
@@ -20,7 +19,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
         //save hashmap for current state to database
-        db.addState(getState(),stateMap)
+        db.updateState(getState(),stateMap)
 
         when(newState){
             in "atWork" -> setState(atWork)
@@ -33,7 +32,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
         if(newState != currentState) {
             currentState = newState
             //load the user prefs from database
-            stateMap = db.getState(getState())
+            stateMap = db.getStateInfo(getState())!!
             if(stateMap.isEmpty())
                 currentState.updateGUI()
             else

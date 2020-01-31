@@ -110,19 +110,40 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }*/
 
     //val dbHelper = DatabaseHandler(context)
-    fun addSurveyInfo(map: HashMap<String, String>){
+    fun addSurveyInfo(profile: UserProfile){
         val db = this.writableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
-        for(entry in map){
-            val question = entry.key
-            val answer = entry.value
 
-            val values = ContentValues().apply{
-                put(SurveyEntry.COLUMN_QUESTION, question)
-                put(SurveyEntry.COLUMN_ANSWER, answer)
-            }
-            db.insert(SurveyEntry.TABLE_NAME, null, values)
+        var values = ContentValues().apply{
+            put(SurveyEntry.COLUMN_QUESTION, "Home")
+            put(SurveyEntry.COLUMN_ANSWER, profile.home)
         }
+        db.insert(SurveyEntry.TABLE_NAME, null, values)
+
+        values = ContentValues().apply{
+            put(SurveyEntry.COLUMN_QUESTION, "School")
+            put(SurveyEntry.COLUMN_ANSWER, profile.school)
+        }
+        db.insert(SurveyEntry.TABLE_NAME, null, values)
+
+        values = ContentValues().apply{
+            put(SurveyEntry.COLUMN_QUESTION, "Work")
+            put(SurveyEntry.COLUMN_ANSWER, profile.work)
+        }
+        db.insert(SurveyEntry.TABLE_NAME, null, values)
+
+        values = ContentValues().apply{
+            put(SurveyEntry.COLUMN_QUESTION, "Gender")
+            put(SurveyEntry.COLUMN_ANSWER, profile.gender)
+        }
+        db.insert(SurveyEntry.TABLE_NAME, null, values)
+
+        values = ContentValues().apply{
+            put(SurveyEntry.COLUMN_QUESTION, "BirthDay")
+            put(SurveyEntry.COLUMN_ANSWER, profile.birthDate)
+        }
+        db.insert(SurveyEntry.TABLE_NAME, null, values)
+
         db.close()
     }
 
@@ -132,11 +153,11 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         onUpgrade(db, 1, 1)
     }
 
-    fun updateSurveyInfo(map: HashMap<String, String>){
+    fun updateSurveyInfo(profile: UserProfile){
         val db = this.writableDatabase
         db.execSQL(SURVEY_DELETE_ENTRIES)
         db.execSQL(SURVEY_CREATE_ENTRIES)
-        addSurveyInfo(map)
+        addSurveyInfo(profile)
 
         db.close()
     }

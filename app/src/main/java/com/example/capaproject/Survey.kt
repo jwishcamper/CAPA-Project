@@ -134,7 +134,10 @@ class Survey() : AppCompatActivity() {
         map["Gender"] = gender
         map["BirthDay"] = "$month/$day/$yr"
 
-        db.updateSurveyInfo(map)
+        var profileObj = UserProfile(home,work,school,gender,"$month/$day/$yr")
+
+        db.updateSurveyInfo(profileObj)
+        //db.updateSurveyInfo(map)
 
 
         finish()

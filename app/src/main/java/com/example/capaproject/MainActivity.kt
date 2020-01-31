@@ -230,13 +230,17 @@ companion object{
                 }
                 REQUEST_APPWIDGET_MUSIC -> {
                     prefs.music = widgetPrefHelper(data!!)
-                    guiHelper.stateMap.remove(cnToChange)
-                    guiHelper.addWidget(prefs.music)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.music)
+                    }
                 }
                 REQUEST_APPWIDGET_CLOCK -> {
                     prefs.clock = widgetPrefHelper(data!!)
-                    guiHelper.stateMap.remove(cnToChange)
-                    guiHelper.addWidget(prefs.clock)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.clock)
+                    }
                 }
 
 

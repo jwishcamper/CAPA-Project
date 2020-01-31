@@ -10,10 +10,10 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import android.widget.ArrayAdapter
+import androidx.core.view.ViewCompat
 
 var map = HashMap<String, String>()
 lateinit var db : DatabaseHandler
-
 class Survey() : AppCompatActivity() {
 
     constructor(maps: HashMap<String, String>,context: Context) : this() {

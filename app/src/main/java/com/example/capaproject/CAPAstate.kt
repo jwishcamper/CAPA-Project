@@ -40,15 +40,27 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler, val prefs : User
                 currentState.updateGUI(stateMap)
         }
     }
-
+    fun removeWidget(name:ComponentName){
+        stateMap.remove(name)
+        refresh()
+    }
     //called when a user adds a custom widget to state.
     fun addWidget(name:ComponentName){
         //add new widget name to hashmap
         //Logic to add new widget at slot 0 then change weight of next one up
         val sorted = stateMap.toList().sortedBy { (_, value) -> value}.toMap()
         val firstKey = sorted.keys.toTypedArray()[0]
-        val secondKey = sorted.keys.toTypedArray()[1]
-        stateMap[firstKey] = (stateMap[firstKey]!!+stateMap[secondKey]!!)/2
+
+        //if there are 2 or more elements, squish the smallest's value between 0 and the second smallest value
+        if(sorted.size > 1) {
+            val secondKey = sorted.keys.toTypedArray()[1]
+            stateMap[firstKey] = (stateMap[firstKey]!! + stateMap[secondKey]!!) / 2
+        }
+        //if there is only 1 element, just set the only element to 1.0
+        else
+            stateMap[firstKey] = 1.0
+
+        //set new CN to weight 0.0
         stateMap[name]=0.0
 
 

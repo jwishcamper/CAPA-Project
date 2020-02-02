@@ -1,30 +1,13 @@
 package com.example.capaproject
 
 import android.content.ComponentName
-import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
-import android.util.Log
-import androidx.lifecycle.Transformations.map
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
-import com.example.capaproject.SurveyReaderContract.SurveyEntry.COLUMN_QUESTION
-//import com.example.capaproject.WorkReaderContract.WorkEntry
-import com.example.capaproject.StateReaderContract.StateEntry
-
-/*
-val DATABASE_NAME = "Database"
-val SURVEY_TABLE_NAME = "Survey"
-val WORK_TABLE_NAME = "User State"
-val SURVEY_COL_QUESTION = "Question"
-val SURVEY_COL_ANSWER = "Answer"
-val WORK_COL_WIDGET = "Widget"
-val WORK_COL_WEIGHT = "Weight"
-*/
-const val WORK_TABLE_NAME = "atWork"
+import com.example.capaproject.WorkReaderContract.WorkEntry
 
 object SurveyReaderContract{
     object SurveyEntry : BaseColumns{
@@ -34,23 +17,23 @@ object SurveyReaderContract{
     }
 }
 
-object StateReaderContract{
+/*object StateReaderContract{
     object StateEntry : BaseColumns{
         //const val TABLE_NAME = ""
         const val COLUMN_PACKAGE = "Package"
         const val COLUMN_CLASS = "Class"
         const val COLUMN_WEIGHT = "Weight"
     }
-}
+}*/
 
-/*object WorkReaderContract{
+object WorkReaderContract{
     object WorkEntry : BaseColumns{
         const val TABLE_NAME = "Work"
-        //const val COLUMN_PACKAGE = "Package"
-        //const val COLUMN_CLASS = "Class"
-        //const val COLUMN_WEIGHT = "Weight"
+        const val COLUMN_PACKAGE = "Package"
+        const val COLUMN_CLASS = "Class"
+        const val COLUMN_WEIGHT = "Weight"
     }
-}*/
+}
 
 private const val SURVEY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${SurveyEntry.TABLE_NAME} (" +
@@ -59,14 +42,14 @@ private const val SURVEY_CREATE_ENTRIES =
             "${SurveyEntry.COLUMN_ANSWER} TEXT)"
 
 private const val WORK_CREATE_ENTRIES =
-    "CREATE TABLE IF NOT EXISTS $WORK_TABLE_NAME (" +
+    "CREATE TABLE IF NOT EXISTS ${WorkEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
-            "${StateEntry.COLUMN_PACKAGE} TEXT," +
-            "${StateEntry.COLUMN_CLASS} TEXT," +
-            "${StateEntry.COLUMN_WEIGHT} DOUBLE)"
+            "${WorkEntry.COLUMN_PACKAGE} TEXT," +
+            "${WorkEntry.COLUMN_CLASS} TEXT," +
+            "${WorkEntry.COLUMN_WEIGHT} DOUBLE)"
 
 private const val SURVEY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${SurveyEntry.TABLE_NAME}"
-private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS $WORK_TABLE_NAME"
+private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${WorkEntry.TABLE_NAME}"
 
 class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     override fun onCreate(db: SQLiteDatabase) {
@@ -84,23 +67,54 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         const val DATABASE_NAME = "Database"
     }
 
-    //save state to database given a string statename and a hashmap
-    fun addState(stateName: String, map: HashMap<ComponentName, Double>){
+    private fun updateWorkInfo(map: HashMap<ComponentName, Double>){
         val db = this.writableDatabase
+        db.execSQL(WORK_DELETE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
+
         for(entry in map){
             val pkg = entry.key.packageName
             val cls = entry.key.className
             val weight = entry.value
+            //val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
 
             val values = ContentValues().apply{
-                put(StateEntry.COLUMN_PACKAGE, pkg)
-                put(StateEntry.COLUMN_CLASS, cls)
-                put(StateEntry.COLUMN_WEIGHT, weight)
+                put(WorkEntry.COLUMN_PACKAGE, pkg)
+                put(WorkEntry.COLUMN_CLASS, cls)
+                put(WorkEntry.COLUMN_WEIGHT, weight)
             }
-            db.insert(stateName, null, values)
+            db.insert(WorkEntry.TABLE_NAME, null, values)
+
+            /*val cursor = db.rawQuery(selectQuery, null)
+            var exists = false
+            var needsDeletion = false
+            cursor.moveToFirst()
+            while(!cursor.isAfterLast) {
+                //db.replace(WorkEntry.TABLE_NAME, null, values)
+                if(cursor.getColumnName(cursor.getColumnIndex(WorkEntry.COLUMN_CLASS)) == cls){
+                    //db.update(WorkEntry.TABLE_NAME, values, null, null)
+                    //cursor.moveToNext()
+                    exists = true
+                    needsDeletion = false
+                    break
+                }else if(cursor.getColumnName(cursor.getColumnIndex(WorkEntry.COLUMN_CLASS)) != cls){
+                    needsDeletion = true
+                }
+                cursor.moveToNext()
+            }
+            if(exists){
+                db.update(WorkEntry.TABLE_NAME, values, "${WorkEntry.COLUMN_CLASS}=$cls", null)
+            }else if(needsDeletion){
+                db.delete(WorkEntry.TABLE_NAME, null, null)
+            }*/
         }
         db.close()
+    }
+
+    fun updateState(stateName: String, map: HashMap<ComponentName, Double>){
+        when(stateName){
+            "atWork" -> updateWorkInfo(map)
+        }
     }
 
     /*fun addState(stateName: String, map: HashMap<ComponentName, Double>){
@@ -109,45 +123,6 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }*/
 
-    //val dbHelper = DatabaseHandler(context)
-    fun addSurveyInfo(profile: UserProfile){
-        val db = this.writableDatabase
-        db.execSQL(SURVEY_CREATE_ENTRIES)
-
-        var values = ContentValues().apply{
-            put(SurveyEntry.COLUMN_QUESTION, "Home")
-            put(SurveyEntry.COLUMN_ANSWER, profile.home)
-        }
-        db.insert(SurveyEntry.TABLE_NAME, null, values)
-
-        values = ContentValues().apply{
-            put(SurveyEntry.COLUMN_QUESTION, "School")
-            put(SurveyEntry.COLUMN_ANSWER, profile.school)
-        }
-        db.insert(SurveyEntry.TABLE_NAME, null, values)
-
-        values = ContentValues().apply{
-            put(SurveyEntry.COLUMN_QUESTION, "Work")
-            put(SurveyEntry.COLUMN_ANSWER, profile.work)
-        }
-        db.insert(SurveyEntry.TABLE_NAME, null, values)
-
-        values = ContentValues().apply{
-            put(SurveyEntry.COLUMN_QUESTION, "Gender")
-            put(SurveyEntry.COLUMN_ANSWER, profile.gender)
-        }
-        db.insert(SurveyEntry.TABLE_NAME, null, values)
-
-        values = ContentValues().apply{
-            put(SurveyEntry.COLUMN_QUESTION, "BirthDay")
-            put(SurveyEntry.COLUMN_ANSWER, profile.birthDate)
-        }
-        db.insert(SurveyEntry.TABLE_NAME, null, values)
-
-        db.close()
-    }
-
-
     fun deleteInfo(){
         val db = this.writableDatabase
         onUpgrade(db, 1, 1)
@@ -155,26 +130,34 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun updateSurveyInfo(profile: UserProfile){
         val db = this.writableDatabase
-        db.execSQL(SURVEY_DELETE_ENTRIES)
         db.execSQL(SURVEY_CREATE_ENTRIES)
-        addSurveyInfo(profile)
 
+        for(entry in profile.getFieldNames()){
+            val question = entry
+            val answer = profile.getField(entry)
+
+            val values = ContentValues().apply{
+                put(SurveyEntry.COLUMN_QUESTION, question)
+                put(SurveyEntry.COLUMN_ANSWER, answer)
+            }
+            db.replace(SurveyEntry.TABLE_NAME, null, values)
+        }
         db.close()
     }
 
-    /*fun getState(stateName: String): HashMap<ComponentName, Double>{
-        var map: HashMap<ComponentName, Double> = HashMap()
-        if(stateName == "Work") {
-            map = getWorkState()
+    fun getStateInfo(stateName: String): HashMap<ComponentName, Double>? {
+        return when (stateName) {
+            "atWork" -> getWorkInfo()
+            else -> return null
         }
-        return map
-    }*/
-    //load state from database
-    fun getState(stateName: String): HashMap<ComponentName, Double>{
+    }
+
+    private fun getWorkInfo(): HashMap<ComponentName, Double> {
         val db = this.writableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
+
         val map: HashMap<ComponentName, Double> = HashMap()
-        val selectQuery = "SELECT * FROM $stateName"
+        val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor!!.moveToFirst()
         while(!cursor.isAfterLast){

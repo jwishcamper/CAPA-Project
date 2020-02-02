@@ -109,6 +109,28 @@ companion object{
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        //starts location updates
+        mLocationRequest = LocationRequest()
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (checkPermissionForLocation(this)) {
+            startLocationUpdates()
+        }
+
+        //databaseHandler.deleteInfo()
+        //databaseHandler.addSurveyInfo("Address", "Bothell")
+        //databaseHandler.addSurveyInfo("Birthday", "01/17")
+        //databaseHandler.updateSurveyInfo("Address", "Bellevue")
+        val testComp = ComponentName(
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
+        )
+
+        //val testDouble = 35.2
+        //val map: HashMap<ComponentName, Double> = HashMap()
+        //map[testComp] = testDouble
+        //databaseHandler.addState("atWork", map)
+        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
+        //Log.d("test", map2.toString())
         mainlayout = findViewById(R.id.mainLayout)
 
         //database variables
@@ -141,14 +163,6 @@ companion object{
             "com.google.android.music",
             "com.android.music.MediaAppWidgetProvider"
         )
-
-        //starts location updates
-        mLocationRequest = LocationRequest()
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        if (checkPermissionForLocation(this)) {
-            startLocationUpdates()
-        }
-
     }
 
     fun buildGUI(frags : HashMap<ComponentName, Double>){
@@ -169,7 +183,7 @@ companion object{
                 if(currentActivity == "Still"){
                     guiHelper.updateUserState("default")
                 }
-                else if(currentActivity!="Still"){
+                else if(currentActivity!="Still") {
                     guiHelper.updateUserState("atWork")
                 }
             }
@@ -268,9 +282,10 @@ companion object{
         currentWidgetList.add(appWidgetInfo)
     }
 
+
     override fun onPause(){
         super.onPause()
-        databaseHandler.addState(guiHelper.getState(),guiHelper.getList())
+        databaseHandler.updateState(guiHelper.getState(),guiHelper.getList())
         //save current UI state to database here
     }
     override fun onStart() {
@@ -333,17 +348,18 @@ companion object{
 
     private val mLocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            //do work here
+
             locationResult.lastLocation
             onLocationChanged(locationResult.lastLocation)
         }
     }
 
+    //when location is changed
     fun onLocationChanged(location: Location){
         //new location has now been determined
         mLastLocation = location
 
-        //if you are close to one of you survey addresses
+        //checking if you are close to one of you survey addresses
         var map = HashMap<String, String>()
         map = databaseHandler.getSurveyInfo()
 
@@ -408,6 +424,7 @@ companion object{
 
     }
 
+    //translating lat and long from a string address
     fun getLocationFromAddress(context: Context, strAddress: String): Location? {
 
         val coder = Geocoder(context)
@@ -450,7 +467,7 @@ companion object{
         settingsClient.checkLocationSettings(locationSettingsRequest)
 
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        //new google api sdk v11 uses getfusedlocationproviderclient(this)
+
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             return
         }

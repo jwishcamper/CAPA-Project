@@ -29,7 +29,7 @@ class Survey() : AppCompatActivity() {
             val homeAddr: EditText = findViewById(R.id.home)
             val workAddr: EditText = findViewById(R.id.work)
             val schoolAddr: EditText = findViewById(R.id.school)
-            val genderSpin: Spinner = findViewById(R.id.gender)
+            val genderSpin: Spinner = this.findViewById(R.id.gender)
             val monthSpin: Spinner = findViewById(R.id.month)
             val daySpin: Spinner = findViewById(R.id.date)
             val yearSpin: Spinner = findViewById(R.id.year)
@@ -116,9 +116,6 @@ class Survey() : AppCompatActivity() {
         val daySpin: Spinner = findViewById(R.id.date)
         val yearSpin: Spinner = findViewById(R.id.year)
 
-        //check if addresses exist in google maps
-
-
         val home = homeAddr.text.toString()
         val work = workAddr.text.toString()
         val school = schoolAddr.text.toString()
@@ -134,11 +131,10 @@ class Survey() : AppCompatActivity() {
         map["Gender"] = gender
         map["BirthDay"] = "$month/$day/$yr"
 
+        //making profile object for information
         var profileObj = UserProfile(home,work,school,gender,"$month/$day/$yr")
 
         db.updateSurveyInfo(profileObj)
-        //db.updateSurveyInfo(map)
-
 
         finish()
     }

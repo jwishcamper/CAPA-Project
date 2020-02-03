@@ -134,7 +134,7 @@ class Survey() : AppCompatActivity() {
         //making profile object for information
         var profileObj = UserProfile(home,work,school,gender,"$month/$day/$yr")
 
-        db.updateSurveyInfo(profileObj)
+        db.updateDatabaseSurvey(profileObj)
 
         finish()
     }

@@ -92,8 +92,12 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         const val DATABASE_NAME = "Database"
     }
 
+    fun updateUserPrefs(prefs: UserPrefApps){
+        updateUserPrefsInfo(prefs)
+    }
+
     //Adds or updates user preferences in database
-    fun updateUserPrefsInfo(prefs: UserPrefApps){
+    private fun updateUserPrefsInfo(prefs: UserPrefApps){
         val db = this.writableDatabase
         db.execSQL(USER_PREFS_CREATE_ENTRIES)
 
@@ -115,19 +119,22 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
         values.clear()
 
-        values = ContentValues().apply {
-            put(UserPrefsEntry.COLUMN_WIDGET, "Music")
-            put(UserPrefsEntry.COLUMN_PACKAGE, musicPKG)
-            put(UserPrefsEntry.COLUMN_CLASS, musicCLS)
-        }
+        values.put(UserPrefsEntry.COLUMN_WIDGET, "Music")
+        values.put(UserPrefsEntry.COLUMN_PACKAGE, musicPKG)
+        values.put(UserPrefsEntry.COLUMN_CLASS, musicCLS)
+
         db.replace(UserPrefsEntry.TABLE_NAME, null, values)
 
         db.close()
     }
 
+    fun getUserPrefs(): UserPrefApps{
+        return getUserPrefsInfo()
+    }
+
     //Gets user preference info from database and returns as UserPrefApps object
-    fun getUserPrefsInfo(): UserPrefApps{
-        val db = this.writableDatabase
+    private fun getUserPrefsInfo(): UserPrefApps{
+        val db = this.readableDatabase
         db.execSQL(USER_PREFS_CREATE_ENTRIES)
         val prefs = UserPrefApps()
 
@@ -142,12 +149,12 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 cls
             )
             when {
-                cursor.getColumnName(cursor.getColumnIndex("Widget")) == "Clock" -> prefs.clock = compName
-                cursor.getColumnName(cursor.getColumnIndex("Widget")) == "Music" -> prefs.music = compName
-                else -> {
+                cursor.getString(cursor.getColumnIndex("Widget")) == "Clock" -> prefs.clock = compName
+                cursor.getString(cursor.getColumnIndex("Widget")) == "Music" -> prefs.music = compName
+                /*else -> {
                     prefs.clock = ComponentName("", "")
                     prefs.music = ComponentName("", "")
-                }
+                }*/
             }
 
             cursor.moveToNext()
@@ -167,7 +174,6 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             val pkg = entry.key.packageName
             val cls = entry.key.className
             val weight = entry.value
-            //val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
 
             val values = ContentValues().apply{
                 put(WorkEntry.COLUMN_PACKAGE, pkg)
@@ -175,47 +181,20 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 put(WorkEntry.COLUMN_WEIGHT, weight)
             }
             db.insert(WorkEntry.TABLE_NAME, null, values)
-
-            /*val cursor = db.rawQuery(selectQuery, null)
-            var exists = false
-            var needsDeletion = false
-            cursor.moveToFirst()
-            while(!cursor.isAfterLast) {
-                //db.replace(WorkEntry.TABLE_NAME, null, values)
-                if(cursor.getColumnName(cursor.getColumnIndex(WorkEntry.COLUMN_CLASS)) == cls){
-                    //db.update(WorkEntry.TABLE_NAME, values, null, null)
-                    //cursor.moveToNext()
-                    exists = true
-                    needsDeletion = false
-                    break
-                }else if(cursor.getColumnName(cursor.getColumnIndex(WorkEntry.COLUMN_CLASS)) != cls){
-                    needsDeletion = true
-
-                }
-                cursor.moveToNext()
-            }
-
-            if(exists){
-                db.update(WorkEntry.TABLE_NAME, values, "${WorkEntry.COLUMN_CLASS}=$cls", null)
-            }else if(needsDeletion){
-                db.delete(WorkEntry.TABLE_NAME, null, null)
-            }*/
         }
         db.close()
     }
 
     //Updates state info in corresponding table using passed string to check which state
-    fun updateState(stateName: String, map: HashMap<ComponentName, Double>){
+    fun updateDatabaseState(stateName: String, map: HashMap<ComponentName, Double>){
         when(stateName){
-            "atWork" -> updateWorkInfo(map)
+            WORK_TABLE_NAME -> updateWorkInfo(map)
         }
     }
 
-    /*fun addState(stateName: String, map: HashMap<ComponentName, Double>){
-        if(stateName == "Work"){
-            addWorkState(map)
-        }
-    }*/
+    fun updateDatabaseSurvey(userProfile: UserProfile){
+        updateSurveyInfo(userProfile)
+    }
 
     //Deletes all tables in database
     fun deleteInfo(){
@@ -224,7 +203,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     //Adds or updates survey info in database
-    fun updateSurveyInfo(profile: UserProfile){
+    private fun updateSurveyInfo(profile: UserProfile){
         val db = this.writableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
 
@@ -241,7 +220,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.close()
     }
 
-    //Uses passed string to get info from corresponding table
+    //Uses passed string to get info from corresponding state table
     fun getStateInfo(stateName: String): HashMap<ComponentName, Double>? {
         return when (stateName) {
             "atWork" -> getWorkInfo()
@@ -251,7 +230,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     //Gets work state info from database and returns as HashMap
     private fun getWorkInfo(): HashMap<ComponentName, Double> {
-        val db = this.writableDatabase
+        val db = this.readableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
 
         val map: HashMap<ComponentName, Double> = HashMap()
@@ -273,8 +252,12 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return map
     }
 
+    fun getSurvey(): HashMap<String, String> {
+        return getSurveyInfo()
+    }
+
     //Gets survey info from database and returns as HashMap
-    fun getSurveyInfo(): HashMap<String, String>{
+    private fun getSurveyInfo(): HashMap<String, String>{
         val db = this.readableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
         val map: HashMap<String, String> = HashMap()

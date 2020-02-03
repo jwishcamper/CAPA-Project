@@ -1,7 +1,6 @@
 package com.example.capaproject
 
 import android.Manifest
-import android.app.ActionBar
 import android.content.ComponentName
 import android.os.Bundle
 import android.util.Log
@@ -18,29 +17,20 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ComponentInfo
 import android.content.pm.PackageManager
 import android.view.*
-import kotlin.concurrent.fixedRateTimer
-import androidx.core.app.ActivityCompat.startActivityForResult
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.os.Looper
-import android.os.UserHandle
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.io.IOException
 import java.lang.Exception
 import java.util.*
 import android.content.res.Resources
-import android.view.*
 import androidx.appcompat.app.AlertDialog
 import java.util.ArrayList
 
@@ -104,35 +94,21 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        //databaseHandler.deleteInfo()
-        //databaseHandler.addSurveyInfo("Address", "Bothell")
-        //databaseHandler.addSurveyInfo("Birthday", "01/17")
-        //databaseHandler.updateSurveyInfo("Address", "Bellevue")
+        
         val testComp = ComponentName(
             "com.google.android.googlequicksearchbox",
             "com.google.android.googlequicksearchbox.SearchWidgetProvider"
         )
 
-        //val testDouble = 35.2
-        //val map: HashMap<ComponentName, Double> = HashMap()
-        //map[testComp] = testDouble
-        //databaseHandler.addState("atWork", map)
-        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
-        //Log.d("test", map2.toString())
-
         //starts location updates
         mLocationRequest = LocationRequest()
+        /*
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (checkPermissionForLocation(this)) {
             startLocationUpdates()
         }
+        */
 
-        //val testDouble = 35.2
-        //val map: HashMap<ComponentName, Double> = HashMap()
-        //map[testComp] = testDouble
-        //databaseHandler.addState("atWork", map)
-        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
-        //Log.d("test", map2.toString())
         mainlayout = findViewById(R.id.mainLayout)
 
         //database variables
@@ -151,6 +127,7 @@ companion object{
 
         prefs = UserPrefApps()
         //Load preferences from database here
+        prefs = databaseHandler.getUserPrefs()
 
         //If user has never set prefs, ask for default widgets
         if(prefs.isEmpty())
@@ -365,9 +342,10 @@ companion object{
         
         //save current UI for current state to database
         if(::guiHelper.isInitialized)
-            databaseHandler.updateState(guiHelper.getState(),guiHelper.getList())
+            databaseHandler.updateDatabaseState(guiHelper.getState(),guiHelper.getList())
 
         //Save user pref apps to database here
+        databaseHandler.updateUserPrefs(prefs)
     }
     override fun onStart() {
         super.onStart()
@@ -402,7 +380,7 @@ companion object{
         if (id == R.id.action_setting) {
 
             //load info from database
-            var map = databaseHandler.getSurveyInfo()
+            var map = databaseHandler.getSurvey()
             if(map.isEmpty()) {
                 map["Home"] = ""
                 map["Work"] = ""
@@ -455,7 +433,7 @@ companion object{
 
         //checking if you are close to one of you survey addresses
         var map = HashMap<String, String>()
-        map = databaseHandler.getSurveyInfo()
+        map = databaseHandler.getSurvey()
 
         var sLoc = ""
         var wLoc = ""

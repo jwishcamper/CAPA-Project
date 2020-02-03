@@ -19,7 +19,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler, val prefs : User
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
         //save hashmap for current state to database
-        db.updateState(getState(),stateMap)
+        db.updateDatabaseState(getState(),stateMap)
 
         when(newState){
             in "atWork" -> setState(atWork)

@@ -208,11 +208,10 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.execSQL(SURVEY_CREATE_ENTRIES)
 
         for(entry in profile.getFieldNames()){
-            val question = entry
             val answer = profile.getField(entry)
 
             val values = ContentValues().apply{
-                put(SurveyEntry.COLUMN_QUESTION, question)
+                put(SurveyEntry.COLUMN_QUESTION, entry)
                 put(SurveyEntry.COLUMN_ANSWER, answer)
             }
             db.replace(SurveyEntry.TABLE_NAME, null, values)
@@ -251,7 +250,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         cursor.close()
         return map
     }
-
+    /*
     fun getSurvey(): HashMap<String, String> {
         return getSurveyInfo()
     }
@@ -272,5 +271,37 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
         cursor.close()
         return map
+    }
+    */
+
+    fun getSurvey(): UserProfile {
+        return getSurveyInfo()
+    }
+
+    private fun getSurveyInfo(): UserProfile{
+        val db = this.readableDatabase
+        db.execSQL(SURVEY_CREATE_ENTRIES)
+
+        var home = ""
+        var work = ""
+        var school = ""
+        var gender = ""
+        var birthday = ""
+
+        val selectQuery = "SELECT * FROM ${SurveyEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToFirst()
+        while(!cursor.isAfterLast){
+            when(cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_QUESTION))){
+                "Home" -> home = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "Work" -> work = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "School" -> school = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "Gender" -> gender = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "Birthday" -> birthday = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+            }
+            cursor.moveToNext()
+        }
+        cursor.close()
+        return UserProfile(home, work, school, gender, birthday)
     }
 }

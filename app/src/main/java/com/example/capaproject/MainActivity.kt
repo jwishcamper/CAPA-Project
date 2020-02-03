@@ -434,7 +434,7 @@ companion object{
         //new location has now been determined
         mLastLocation = location
 
-        userProfile = databaseHandler.getSurvey()
+        //userProfile = databaseHandler.getSurvey()
         //checking if you are close to one of you survey addresses
 
         //checking school address

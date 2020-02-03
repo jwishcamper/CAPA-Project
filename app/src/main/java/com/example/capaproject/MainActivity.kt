@@ -21,7 +21,6 @@ import android.content.Intent
 import android.content.pm.ComponentInfo
 import android.content.pm.PackageManager
 import android.view.*
-import java.util.ArrayList
 import kotlin.concurrent.fixedRateTimer
 import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.app.ComponentActivity
@@ -39,6 +38,7 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.io.IOException
 import java.lang.Exception
+import java.util.*
 
 //currently unused from fragment logic
 /*
@@ -115,15 +115,6 @@ companion object{
         if (checkPermissionForLocation(this)) {
             startLocationUpdates()
         }
-
-        //databaseHandler.deleteInfo()
-        //databaseHandler.addSurveyInfo("Address", "Bothell")
-        //databaseHandler.addSurveyInfo("Birthday", "01/17")
-        //databaseHandler.updateSurveyInfo("Address", "Bellevue")
-        val testComp = ComponentName(
-            "com.google.android.googlequicksearchbox",
-            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
-        )
 
         //val testDouble = 35.2
         //val map: HashMap<ComponentName, Double> = HashMap()

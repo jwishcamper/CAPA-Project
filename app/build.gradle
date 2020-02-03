@@ -24,7 +24,6 @@ android {
 }
 
 dependencies {
-    //implementation 'com.google.android.gms:play-services-location:11.8.0'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.google.android.gms:play-services-location:16.0.0'

@@ -6,6 +6,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
+import android.util.Log
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
 import com.example.capaproject.WorkReaderContract.WorkEntry
 import com.example.capaproject.UserPrefsContract.UserPrefsEntry
@@ -250,27 +251,37 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         cursor.close()
         return map
     }
-    /*
-    fun getSurvey(): HashMap<String, String> {
+
+    fun getSurvey(): UserProfile {
         return getSurveyInfo()
     }
 
     //Gets survey info from database and returns as HashMap
-    private fun getSurveyInfo(): HashMap<String, String>{
+    private fun getSurveyInfo(): UserProfile{
         val db = this.readableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
-        val map: HashMap<String, String> = HashMap()
+
+        var home = ""
+        var work = ""
+        var school = ""
+        var gender = ""
+        var birthday = ""
+
         val selectQuery = "SELECT * FROM ${SurveyEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
-        cursor!!.moveToFirst()
+        cursor.moveToFirst()
         while(!cursor.isAfterLast){
-            val question = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_QUESTION))
-            val answer = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
-            map[question] = answer
+            when(cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_QUESTION))){
+                "Home" -> home = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "Work" -> work = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "School" -> school = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "Gender" -> gender = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "Birthday" -> birthday = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+            }
             cursor.moveToNext()
         }
         cursor.close()
-        return map
+        return UserProfile(home, work, school, gender, birthday)
     }
     */
 

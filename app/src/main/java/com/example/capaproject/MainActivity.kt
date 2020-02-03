@@ -39,6 +39,9 @@ import com.google.android.gms.location.*
 import java.io.IOException
 import java.lang.Exception
 import java.util.*
+import android.content.res.Resources
+import android.view.*
+import java.util.ArrayList
 
 //currently unused from fragment logic
 /*
@@ -68,6 +71,10 @@ class MainActivity : AppCompatActivity() {
     private val APPWIDGET_HOST_ID = 1
     private val REQUEST_PICK_APPWIDGET = 2
     private val REQUEST_CREATE_APPWIDGET = 3
+    private val REQUEST_APPWIDGET_CLOCK_CHAIN = 4
+    private val REQUEST_APPWIDGET_MUSIC_CHAIN = 5
+    private val REQUEST_APPWIDGET_CLOCK = 6
+    private val REQUEST_APPWIDGET_MUSIC = 7
     lateinit var infos : List<AppWidgetProviderInfo>
 
     private lateinit var mainlayout: ViewGroup
@@ -75,6 +82,9 @@ class MainActivity : AppCompatActivity() {
     //helper object to determine user state
     private lateinit var stateHelper: stateChange
     private lateinit var guiHelper : CAPAstate
+
+    private lateinit var prefs : UserPrefApps
+    private var cnToChange = ComponentName("","")
 
     private lateinit var databaseHandler : DatabaseHandler
 
@@ -128,7 +138,7 @@ companion object{
         databaseHandler = DatabaseHandler(this)
 
         //NUKE THE DATABASE!!!!!
-        //databaseHandler.deleteInfo()
+        databaseHandler.deleteInfo()
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
@@ -137,29 +147,69 @@ companion object{
 
 
         //screenHeight = getScreenHeight()
-        stateHelper = stateChange(this)
-        guiHelper = CAPAstate(this,databaseHandler)
-        guiHelper.updateUserState("atWork")
-        updateContext()
 
-        val compSearch = ComponentName(
-            "com.google.android.googlequicksearchbox",
-            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
-        )
-        val compAnalogClock = ComponentName(
-            "com.google.android.deskclock",
-            "com.android.alarmclock.AnalogAppWidgetProvider"
-        )
-        val compMusic = ComponentName(
-            "com.google.android.music",
-            "com.android.music.MediaAppWidgetProvider"
-        )
+        prefs = UserPrefApps()
+        //Load preferences from database here
+
+        //If user has never set prefs, ask for default widgets
+        if(prefs.isEmpty())
+            queryUserPrefWidget("Clock")
+        else
+            finishOnCreate()
     }
 
+    private fun finishOnCreate(){
+        stateHelper = stateChange(this)
+        guiHelper = CAPAstate(this, databaseHandler, prefs)
+        guiHelper.updateUserState("atWork")
+        updateContext()
+    }
+    //Initial query to ask user for all defaults if none exist
+    fun queryUserPrefWidget(widgetType : String){
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Please select your preferred $widgetType widget from the following list: ")
+        builder.setPositiveButton("OK") { dialog, _ ->
+            val appWidgetId = this.mAppWidgetHost.allocateAppWidgetId()
+            val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
+            pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            when(widgetType) {
+                in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK_CHAIN)
+                "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC_CHAIN)
+            }
+        }
+        builder.create()
+        builder.show()
+
+    }
+    //for changing individual default widgets
+    private fun helperQueryUserPrefWidget(widgetType : String){
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Please select your preferred $widgetType widget from the following list: ")
+        builder.setPositiveButton("OK") { dialog, _ ->
+            val appWidgetId = this.mAppWidgetHost.allocateAppWidgetId()
+            val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
+            pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            when(widgetType) {
+                in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK)
+                "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC)
+            }
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.cancel()
+        }
+        builder.create()
+        builder.show()
+
+    }
+
+    //Build the GUI given a hashmap. Called from CAPAstate.setState
     fun buildGUI(frags : HashMap<ComponentName, Double>){
         removeAllWidgets()
         val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
         for (entry in sorted) {
+            //Log.d("Trying to build: ",entry.key.className)
             createDefaultWidget(entry.key)
             //createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
         }
@@ -177,6 +227,9 @@ companion object{
                 else if(currentActivity!="Still") {
                     guiHelper.updateUserState("atWork")
                 }
+                //Log.d("PrefClock: ",prefs.clock.className)
+                //Log.d("PrefMusic: ",prefs.music.className)
+                //guiHelper.refresh()
             }
         }
     }
@@ -223,10 +276,33 @@ companion object{
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == REQUEST_PICK_APPWIDGET) {
-                configureWidget(data!!)
-            } else if (requestCode == REQUEST_CREATE_APPWIDGET) {
-                createWidget(data!!)
+            when (requestCode) {
+                REQUEST_PICK_APPWIDGET -> configureWidget(data!!)
+                REQUEST_CREATE_APPWIDGET -> createWidget(data!!)
+                REQUEST_APPWIDGET_CLOCK_CHAIN -> {
+                    prefs.clock = widgetPrefHelper(data!!)
+                    queryUserPrefWidget("Music")
+                }
+                REQUEST_APPWIDGET_MUSIC_CHAIN -> {
+                    prefs.music = widgetPrefHelper(data!!)
+                    finishOnCreate()
+                }
+                REQUEST_APPWIDGET_MUSIC -> {
+                    prefs.music = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.music)
+                    }
+                }
+                REQUEST_APPWIDGET_CLOCK -> {
+                    prefs.clock = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.clock)
+                    }
+                }
+
+
             }
         } else if (resultCode == Activity.RESULT_CANCELED && data != null) {
             val appWidgetId = data.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
@@ -234,6 +310,15 @@ companion object{
                 mAppWidgetHost.deleteAppWidgetId(appWidgetId)
             }
         }
+    }
+    private fun widgetPrefHelper(data: Intent) : ComponentName{
+        val extras = data.extras
+        val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+        val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
+        return ComponentName(
+            appWidgetInfo.provider.packageName,
+            appWidgetInfo.provider.className
+        )
     }
     private fun configureWidget(data: Intent) {
         val extras = data.extras
@@ -266,8 +351,8 @@ companion object{
             appWidgetInfo.provider.className
         )
         guiHelper.addWidget(cn)
-        Log.d("TAG",appWidgetInfo.provider.packageName)
-        Log.d("TAG",appWidgetInfo.provider.className)
+        //Log.d("TAG",appWidgetInfo.provider.packageName)
+        //Log.d("TAG",appWidgetInfo.provider.className)
 
 
         currentWidgetList.add(appWidgetInfo)
@@ -276,8 +361,12 @@ companion object{
 
     override fun onPause(){
         super.onPause()
-        databaseHandler.updateState(guiHelper.getState(),guiHelper.getList())
-        //save current UI state to database here
+        
+        //save current UI for current state to database
+        if(::guiHelper.isInitialized)
+            databaseHandler.addState(guiHelper.getState(),guiHelper.getList())
+
+        //Save user pref apps to database here
     }
     override fun onStart() {
         super.onStart()
@@ -311,11 +400,8 @@ companion object{
 
         if (id == R.id.action_setting) {
 
-            var map = HashMap<String, String>()
-
-
             //load info from database
-            map = databaseHandler.getSurveyInfo()
+            var map = databaseHandler.getSurveyInfo()
             if(map.isEmpty()) {
                 map["Home"] = ""
                 map["Work"] = ""
@@ -326,12 +412,28 @@ companion object{
 
             val surveyOne = Survey(map,this)
 
-
-
             val intent = Intent(this, surveyOne.javaClass)
             startActivity(intent)
             Toast.makeText(this, "User Survey", Toast.LENGTH_SHORT).show()
 
+        }
+        else if(id == R.id.prefApps){
+            //display list of widgets to user
+            val res: Resources = resources
+            val widgetList = res.getStringArray(R.array.Widgets)
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Select widget to change default:")
+                .setItems(widgetList) { dialog, which ->
+                    //remove old widget from stateMap
+                    cnToChange = prefs.getAttr(widgetList[which])
+                    helperQueryUserPrefWidget(widgetList[which])
+                    dialog.dismiss()
+                }
+                builder.setNegativeButton("Cancel") { dialog, _ ->
+                    dialog.cancel()
+                }
+                builder.create()
+                builder.show()
         }
 
         return super.onOptionsItemSelected(item)

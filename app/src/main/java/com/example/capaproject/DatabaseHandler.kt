@@ -8,6 +8,11 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
 import com.example.capaproject.WorkReaderContract.WorkEntry
+import com.example.capaproject.SurveyReaderContract.SurveyEntry.COLUMN_QUESTION
+import com.example.capaproject.StateReaderContract.StateEntry
+
+
+const val WORK_TABLE_NAME = "atWork"
 
 object SurveyReaderContract{
     object SurveyEntry : BaseColumns{

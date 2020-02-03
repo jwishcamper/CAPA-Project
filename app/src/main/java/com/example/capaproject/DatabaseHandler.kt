@@ -8,8 +8,9 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
 import com.example.capaproject.WorkReaderContract.WorkEntry
-import com.example.capaproject.SurveyReaderContract.SurveyEntry.COLUMN_QUESTION
-import com.example.capaproject.StateReaderContract.StateEntry
+import com.example.capaproject.UserPrefsContract.UserPrefsEntry
+
+//import com.example.capaproject.StateReaderContract.StateEntry
 
 
 const val WORK_TABLE_NAME = "atWork"
@@ -40,11 +41,25 @@ object WorkReaderContract{
     }
 }
 
+object UserPrefsContract{
+    object UserPrefsEntry : BaseColumns{
+        const val TABLE_NAME = "UserPrefs"
+        const val COLUMN_PACKAGE = "Package"
+        const val COLUMN_CLASS = "Class"
+    }
+}
+
 private const val SURVEY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${SurveyEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${SurveyEntry.COLUMN_QUESTION} TEXT," +
             "${SurveyEntry.COLUMN_ANSWER} TEXT)"
+
+private const val USER_PREFS_CREATE_ENTRIES =
+    "CREATE TABLE IF NOT EXISTS ${UserPrefsEntry.TABLE_NAME} (" +
+            "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${UserPrefsEntry.COLUMN_PACKAGE} TEXT," +
+            "${UserPrefsEntry.COLUMN_CLASS} TEXT"
 
 private const val WORK_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${WorkEntry.TABLE_NAME} (" +
@@ -55,16 +70,19 @@ private const val WORK_CREATE_ENTRIES =
 
 private const val SURVEY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${SurveyEntry.TABLE_NAME}"
 private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${WorkEntry.TABLE_NAME}"
+private const val USER_PREFS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPrefsEntry.TABLE_NAME}"
 
 class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(SURVEY_CREATE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
+        db.execSQL(USER_PREFS_CREATE_ENTRIES)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL(SURVEY_DELETE_ENTRIES)
         db.execSQL(WORK_DELETE_ENTRIES)
+        db.execSQL(USER_PREFS_DELETE_ENTRIES)
         onCreate(db)
     }
     companion object{
@@ -72,6 +90,32 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         const val DATABASE_NAME = "Database"
     }
 
+    //Adds or updates user preferences in database
+    fun updateUserPrefsInfo(prefs: UserPrefApps){
+        val db = this.writableDatabase
+        db.execSQL(USER_PREFS_CREATE_ENTRIES)
+
+        val clock = prefs.getAttr("Clock")
+        val music = prefs.getAttr("Music")
+
+        val clockPKG = clock.packageName
+        val clockCLS = clock.className
+
+        val musicPKG = music.packageName
+        val musicCLS = music.className
+
+        val values = ContentValues().apply {
+            put(UserPrefsEntry.COLUMN_PACKAGE, clockPKG)
+            put(UserPrefsEntry.COLUMN_CLASS, clockCLS)
+            put(UserPrefsEntry.COLUMN_PACKAGE, musicPKG)
+            put(UserPrefsEntry.COLUMN_CLASS, musicCLS)
+        }
+        db.replace(SurveyEntry.TABLE_NAME, null, values)
+
+        db.close()
+    }
+
+    //Adds or updates work state info in database
     private fun updateWorkInfo(map: HashMap<ComponentName, Double>){
         val db = this.writableDatabase
         db.execSQL(WORK_DELETE_ENTRIES)
@@ -118,6 +162,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.close()
     }
 
+    //Updates state info in corresponding table using passed string to check which state
     fun updateState(stateName: String, map: HashMap<ComponentName, Double>){
         when(stateName){
             "atWork" -> updateWorkInfo(map)
@@ -130,11 +175,13 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }*/
 
+    //Deletes all tables in database
     fun deleteInfo(){
         val db = this.writableDatabase
         onUpgrade(db, 1, 1)
     }
 
+    //Adds or updates survey info in database
     fun updateSurveyInfo(profile: UserProfile){
         val db = this.writableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
@@ -152,6 +199,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         db.close()
     }
 
+    //Uses passed string to get info from corresponding table
     fun getStateInfo(stateName: String): HashMap<ComponentName, Double>? {
         return when (stateName) {
             "atWork" -> getWorkInfo()
@@ -159,6 +207,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
+    //Gets work state info from database and returns as HashMap
     private fun getWorkInfo(): HashMap<ComponentName, Double> {
         val db = this.writableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
@@ -182,6 +231,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return map
     }
 
+    //Gets survey info from database and returns as HashMap
     fun getSurveyInfo(): HashMap<String, String>{
         val db = this.readableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)

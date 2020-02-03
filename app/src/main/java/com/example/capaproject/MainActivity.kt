@@ -41,6 +41,7 @@ import java.lang.Exception
 import java.util.*
 import android.content.res.Resources
 import android.view.*
+import androidx.appcompat.app.AlertDialog
 import java.util.ArrayList
 
 //currently unused from fragment logic
@@ -138,7 +139,7 @@ companion object{
         databaseHandler = DatabaseHandler(this)
 
         //NUKE THE DATABASE!!!!!
-        databaseHandler.deleteInfo()
+        //databaseHandler.deleteInfo()
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
@@ -364,7 +365,7 @@ companion object{
         
         //save current UI for current state to database
         if(::guiHelper.isInitialized)
-            databaseHandler.addState(guiHelper.getState(),guiHelper.getList())
+            databaseHandler.updateState(guiHelper.getState(),guiHelper.getList())
 
         //Save user pref apps to database here
     }

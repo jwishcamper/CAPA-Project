@@ -283,36 +283,4 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         cursor.close()
         return UserProfile(home, work, school, gender, birthday)
     }
-    */
-
-    fun getSurvey(): UserProfile {
-        return getSurveyInfo()
-    }
-
-    private fun getSurveyInfo(): UserProfile{
-        val db = this.readableDatabase
-        db.execSQL(SURVEY_CREATE_ENTRIES)
-
-        var home = ""
-        var work = ""
-        var school = ""
-        var gender = ""
-        var birthday = ""
-
-        val selectQuery = "SELECT * FROM ${SurveyEntry.TABLE_NAME}"
-        val cursor = db.rawQuery(selectQuery, null)
-        cursor.moveToFirst()
-        while(!cursor.isAfterLast){
-            when(cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_QUESTION))){
-                "Home" -> home = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
-                "Work" -> work = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
-                "School" -> school = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
-                "Gender" -> gender = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
-                "Birthday" -> birthday = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
-            }
-            cursor.moveToNext()
-        }
-        cursor.close()
-        return UserProfile(home, work, school, gender, birthday)
-    }
 }

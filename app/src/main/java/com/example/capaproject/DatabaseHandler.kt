@@ -44,6 +44,7 @@ object WorkReaderContract{
 object UserPrefsContract{
     object UserPrefsEntry : BaseColumns{
         const val TABLE_NAME = "UserPrefs"
+        const val COLUMN_WIDGET = "Widget"
         const val COLUMN_PACKAGE = "Package"
         const val COLUMN_CLASS = "Class"
     }
@@ -58,8 +59,9 @@ private const val SURVEY_CREATE_ENTRIES =
 private const val USER_PREFS_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${UserPrefsEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${UserPrefsEntry.COLUMN_WIDGET} TEXT," +
             "${UserPrefsEntry.COLUMN_PACKAGE} TEXT," +
-            "${UserPrefsEntry.COLUMN_CLASS} TEXT"
+            "${UserPrefsEntry.COLUMN_CLASS} TEXT)"
 
 private const val WORK_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${WorkEntry.TABLE_NAME} (" +
@@ -104,15 +106,55 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val musicPKG = music.packageName
         val musicCLS = music.className
 
-        val values = ContentValues().apply {
+        var values = ContentValues().apply {
+            put(UserPrefsEntry.COLUMN_WIDGET, "Clock")
             put(UserPrefsEntry.COLUMN_PACKAGE, clockPKG)
             put(UserPrefsEntry.COLUMN_CLASS, clockCLS)
+        }
+        db.replace(UserPrefsEntry.TABLE_NAME, null, values)
+
+        values.clear()
+
+        values = ContentValues().apply {
+            put(UserPrefsEntry.COLUMN_WIDGET, "Music")
             put(UserPrefsEntry.COLUMN_PACKAGE, musicPKG)
             put(UserPrefsEntry.COLUMN_CLASS, musicCLS)
         }
-        db.replace(SurveyEntry.TABLE_NAME, null, values)
+        db.replace(UserPrefsEntry.TABLE_NAME, null, values)
 
         db.close()
+    }
+
+    //Gets user preference info from database and returns as UserPrefApps object
+    fun getUserPrefsInfo(): UserPrefApps{
+        val db = this.writableDatabase
+        db.execSQL(USER_PREFS_CREATE_ENTRIES)
+        val prefs = UserPrefApps()
+
+        val selectQuery = "SELECT * FROM ${UserPrefsEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToFirst()
+        while(!cursor.isAfterLast){
+            var pkg = cursor.getString(cursor.getColumnIndex("Package"))
+            val cls = cursor.getString(cursor.getColumnIndex("Class"))
+            val compName = ComponentName(
+                pkg,
+                cls
+            )
+            when {
+                cursor.getColumnName(cursor.getColumnIndex("Widget")) == "Clock" -> prefs.clock = compName
+                cursor.getColumnName(cursor.getColumnIndex("Widget")) == "Music" -> prefs.music = compName
+                else -> {
+                    prefs.clock = ComponentName("", "")
+                    prefs.music = ComponentName("", "")
+                }
+            }
+
+            cursor.moveToNext()
+        }
+        cursor.close()
+
+        return prefs
     }
 
     //Adds or updates work state info in database

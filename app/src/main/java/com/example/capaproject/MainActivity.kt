@@ -1,5 +1,7 @@
 package com.example.capaproject
 
+import android.Manifest
+import android.app.ActionBar
 import android.content.ComponentName
 import android.os.Bundle
 import android.util.Log
@@ -14,9 +16,29 @@ import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
+import android.content.Context
 import android.content.Intent
+import android.content.pm.ComponentInfo
+import android.content.pm.PackageManager
 import android.view.*
 import java.util.ArrayList
+import kotlin.concurrent.fixedRateTimer
+import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.core.app.ComponentActivity
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import android.location.Address
+import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
+import android.os.Build
+import android.os.Looper
+import android.os.UserHandle
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.*
+import java.io.IOException
+import java.lang.Exception
 
 //currently unused from fragment logic
 /*
@@ -32,6 +54,13 @@ var fragments = mutableListOf<Fragment>()
 */
 
 class MainActivity : AppCompatActivity() {
+
+    //laction functional vaiables
+    lateinit var mLastLocation: Location
+    private lateinit var mLocationRequest: LocationRequest
+    private val INTERVAL: Long = 2000
+    private val FASTEST_INTERVAL: Long = 1000
+    private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
     //
     private var currentWidgetList = mutableListOf<AppWidgetProviderInfo>()
     private lateinit var mAppWidgetManager: AppWidgetManager
@@ -80,6 +109,28 @@ companion object{
         //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
         //Log.d("test", map2.toString())
 
+        //starts location updates
+        mLocationRequest = LocationRequest()
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (checkPermissionForLocation(this)) {
+            startLocationUpdates()
+        }
+
+        //databaseHandler.deleteInfo()
+        //databaseHandler.addSurveyInfo("Address", "Bothell")
+        //databaseHandler.addSurveyInfo("Birthday", "01/17")
+        //databaseHandler.updateSurveyInfo("Address", "Bellevue")
+        val testComp = ComponentName(
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
+        )
+
+        //val testDouble = 35.2
+        //val map: HashMap<ComponentName, Double> = HashMap()
+        //map[testComp] = testDouble
+        //databaseHandler.addState("atWork", map)
+        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
+        //Log.d("test", map2.toString())
         mainlayout = findViewById(R.id.mainLayout)
 
         //database variables
@@ -231,6 +282,7 @@ companion object{
         currentWidgetList.add(appWidgetInfo)
     }
 
+
     override fun onPause(){
         super.onPause()
         databaseHandler.updateState(guiHelper.getState(),guiHelper.getList())
@@ -292,6 +344,162 @@ companion object{
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    private val mLocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+
+            locationResult.lastLocation
+            onLocationChanged(locationResult.lastLocation)
+        }
+    }
+
+    //when location is changed
+    fun onLocationChanged(location: Location){
+        //new location has now been determined
+        mLastLocation = location
+
+        //checking if you are close to one of you survey addresses
+        var map = HashMap<String, String>()
+        map = databaseHandler.getSurveyInfo()
+
+        var sLoc = ""
+        var wLoc = ""
+        var hLoc = ""
+
+
+        sLoc = map.get("School").toString()
+        wLoc = map.get("Work").toString()
+        hLoc = map.get("Home").toString()
+
+
+        //checking school address
+        try {
+            var school: Location? = Location("service Provider")
+            school = getLocationFromAddress(this, sLoc)
+
+            //getting distance
+            var sDistance = mLastLocation.distanceTo(school)
+
+            if(sDistance < 400){
+                locLabel.text = "At School"
+            }
+        }catch (e: Exception){
+            val geocoder = Geocoder(this, Locale.getDefault())
+            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+        }
+
+        //checking work address
+        try{
+            var work: Location? = Location("service Provider")
+            work = getLocationFromAddress(this, wLoc)
+
+            //getting distance
+            var wDistance = mLastLocation.distanceTo(work)
+
+            if(wDistance < 400){
+                locLabel.text = "At Work"
+            }
+        }
+        catch (e: Exception){
+            val geocoder = Geocoder(this, Locale.getDefault())
+            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+        }
+
+        //checking home address
+        try{
+            var home: Location? = Location("service Provider")
+            home = getLocationFromAddress(this, hLoc)
+
+            //getting distance
+            var hDistance = mLastLocation.distanceTo(home)
+
+            if(hDistance < 400){
+                locLabel.text = "At Home"
+            }
+        }catch (e: Exception){
+            val geocoder = Geocoder(this, Locale.getDefault())
+            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+        }
+
+    }
+
+    //translating lat and long from a string address
+    fun getLocationFromAddress(context: Context, strAddress: String): Location? {
+
+        val coder = Geocoder(context)
+        val address: List<Address>?
+        var p1: Location? = null
+
+        try {
+            // May throw an IOException
+            address = coder.getFromLocationName(strAddress, 5)
+            if (address == null) {
+                return null
+            }
+
+            val location = address[0]
+            p1 = Location("service Provider")
+            p1.latitude = location.latitude
+            p1.longitude = location.longitude
+
+        } catch (ex: IOException) {
+
+            ex.printStackTrace()
+        }
+
+        return p1
+    }
+
+    protected fun startLocationUpdates(){
+
+        //create the location request to start receiving updates
+        mLocationRequest!!.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        mLocationRequest!!.setInterval(INTERVAL)
+        mLocationRequest!!.setFastestInterval(FASTEST_INTERVAL)
+
+        //create locationsettingrequest object using location request
+        val builder = LocationSettingsRequest.Builder()
+        builder.addLocationRequest(mLocationRequest!!)
+        val locationSettingsRequest = builder.build()
+
+        val settingsClient = LocationServices.getSettingsClient(this)
+        settingsClient.checkLocationSettings(locationSettingsRequest)
+
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            return
+        }
+        mFusedLocationProviderClient!!.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper())
+
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == 10) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startLocationUpdates()
+            } else {
+                Toast.makeText(this@MainActivity, "Permission Denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun checkPermissionForLocation(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+            if (context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED) {
+                true
+            } else {
+                // Show the permission request
+                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    10)
+                false
+            }
+        } else {
+            true
+        }
     }
 
 

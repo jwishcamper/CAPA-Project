@@ -103,6 +103,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 }
                 cursor.moveToNext()
             }
+
             if(exists){
                 db.update(WorkEntry.TABLE_NAME, values, "${WorkEntry.COLUMN_CLASS}=$cls", null)
             }else if(needsDeletion){
@@ -129,13 +130,13 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         onUpgrade(db, 1, 1)
     }
 
-    fun updateSurveyInfo(map: HashMap<String, String>){
+    fun updateSurveyInfo(profile: UserProfile){
         val db = this.writableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
 
-        for(entry in map){
-            val question = entry.key
-            val answer = entry.value
+        for(entry in profile.getFieldNames()){
+            val question = entry
+            val answer = profile.getField(entry)
 
             val values = ContentValues().apply{
                 put(SurveyEntry.COLUMN_QUESTION, question)
@@ -193,4 +194,3 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         return map
     }
 }
-

@@ -57,7 +57,6 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
         for (entry in stateMap) {
             Log.d("TAG",entry.key.className)
             Log.d("TAG",entry.value.toString())
-
         }*/
 
         //refresh display based on new hashmap.
@@ -79,7 +78,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
     //gets current state as a string
     fun getState() : String {
         return if(currentState==atWork) "atWork"
-            else "default"
+        else "default"
 
     }
 }

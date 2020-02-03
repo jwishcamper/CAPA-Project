@@ -55,6 +55,8 @@ class MainActivity : AppCompatActivity() {
     private val INTERVAL: Long = 2000
     private val FASTEST_INTERVAL: Long = 1000
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
+    lateinit var userProfile : UserProfile
+
     //
     private var currentWidgetList = mutableListOf<AppWidgetProviderInfo>()
     private lateinit var mAppWidgetManager: AppWidgetManager
@@ -94,25 +96,29 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
+        /*
         val testComp = ComponentName(
             "com.google.android.googlequicksearchbox",
             "com.google.android.googlequicksearchbox.SearchWidgetProvider"
         )
-
+*/
         //starts location updates
         mLocationRequest = LocationRequest()
-        /*
+
+
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (checkPermissionForLocation(this)) {
             startLocationUpdates()
         }
-        */
+
 
         mainlayout = findViewById(R.id.mainLayout)
 
         //database variables
         databaseHandler = DatabaseHandler(this)
+
+        userProfile = databaseHandler.getSurvey()
+            //text.text=userProfile.getField("BirthDay")
 
         //NUKE THE DATABASE!!!!!
         //databaseHandler.deleteInfo()
@@ -199,6 +205,9 @@ companion object{
         fixedRateTimer("timer",false,0,1000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getContext()
+
+                //text.text=userProfile.getField("School")
+                //placeholder for testing state changes
                 if(currentActivity == "Still"){
                     guiHelper.updateUserState("default")
                 }
@@ -336,7 +345,10 @@ companion object{
         currentWidgetList.add(appWidgetInfo)
     }
 
-
+    override fun onResume(){
+        super.onResume()
+        userProfile = databaseHandler.getSurvey()
+    }
     override fun onPause(){
         super.onPause()
         
@@ -350,6 +362,7 @@ companion object{
     override fun onStart() {
         super.onStart()
         mAppWidgetHost.startListening()
+        userProfile = databaseHandler.getSurvey()
     }
 
     override fun onStop() {
@@ -379,17 +392,7 @@ companion object{
 
         if (id == R.id.action_setting) {
 
-            //load info from database
-            var map = databaseHandler.getSurvey()
-            if(map.isEmpty()) {
-                map["Home"] = ""
-                map["Work"] = ""
-                map["School"] = ""
-                map["Gender"] = "Other"
-                map["BirthDay"] = "01/01/1930"
-            }
-
-            val surveyOne = Survey(map,this)
+            val surveyOne = Survey(userProfile,this)
 
             val intent = Intent(this, surveyOne.javaClass)
             startActivity(intent)
@@ -431,67 +434,59 @@ companion object{
         //new location has now been determined
         mLastLocation = location
 
+        userProfile = databaseHandler.getSurvey()
         //checking if you are close to one of you survey addresses
-        var map = HashMap<String, String>()
-        map = databaseHandler.getSurvey()
-
-        var sLoc = ""
-        var wLoc = ""
-        var hLoc = ""
-
-
-        sLoc = map.get("School").toString()
-        wLoc = map.get("Work").toString()
-        hLoc = map.get("Home").toString()
-
 
         //checking school address
         try {
             var school: Location? = Location("service Provider")
-            school = getLocationFromAddress(this, sLoc)
+            school = getLocationFromAddress(this, userProfile.getField("School"))
 
             //getting distance
             var sDistance = mLastLocation.distanceTo(school)
-
+            //locLabel.text=sDistance.toString()
             if(sDistance < 400){
+                //Update state here
                 locLabel.text = "At School"
             }
         }catch (e: Exception){
             val geocoder = Geocoder(this, Locale.getDefault())
-            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
 
         //checking work address
         try{
             var work: Location? = Location("service Provider")
-            work = getLocationFromAddress(this, wLoc)
+            work = getLocationFromAddress(this, userProfile.getField("Work"))
 
             //getting distance
-            var wDistance = mLastLocation.distanceTo(work)
+            val wDistance = mLastLocation.distanceTo(work)
 
             if(wDistance < 400){
+                //Update state here
                 locLabel.text = "At Work"
             }
         }
         catch (e: Exception){
             val geocoder = Geocoder(this, Locale.getDefault())
-            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
 
         //checking home address
         try{
             var home: Location? = Location("service Provider")
-            home = getLocationFromAddress(this, hLoc)
+            home = getLocationFromAddress(this, userProfile.getField("Home"))
 
             //getting distance
-            var hDistance = mLastLocation.distanceTo(home)
+            val hDistance = mLastLocation.distanceTo(home)
 
             if(hDistance < 400){
+                //Update state here
                 locLabel.text = "At Home"
             }
         }catch (e: Exception){
             val geocoder = Geocoder(this, Locale.getDefault())
-            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
 
     }
@@ -526,9 +521,9 @@ companion object{
     protected fun startLocationUpdates(){
 
         //create the location request to start receiving updates
-        mLocationRequest!!.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        mLocationRequest!!.setInterval(INTERVAL)
-        mLocationRequest!!.setFastestInterval(FASTEST_INTERVAL)
+        mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        mLocationRequest.interval = INTERVAL
+        mLocationRequest.fastestInterval = FASTEST_INTERVAL
 
         //create locationsettingrequest object using location request
         val builder = LocationSettingsRequest.Builder()

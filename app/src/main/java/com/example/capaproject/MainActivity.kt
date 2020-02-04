@@ -438,56 +438,49 @@ companion object{
         //checking if you are close to one of you survey addresses
 
         //checking school address
+        val school : Location?
+        val work : Location?
+        val home : Location?
+        var sDistance : Float = (-1).toFloat()
+        var wDistance : Float = (-1).toFloat()
+        var hDistance : Float = (-1).toFloat()
+
         try {
-            var school: Location? = Location("service Provider")
             school = getLocationFromAddress(this, userProfile.getField("School"))
-
-            //getting distance
-            var sDistance = mLastLocation.distanceTo(school)
-            //locLabel.text=sDistance.toString()
-            if(sDistance < 400){
-                //Update state here
-                locLabel.text = "At School"
-            }
+            sDistance  = mLastLocation.distanceTo(school)
         }catch (e: Exception){
             val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
-
-        //checking work address
-        try{
-            var work: Location? = Location("service Provider")
+        try {
             work = getLocationFromAddress(this, userProfile.getField("Work"))
-
-            //getting distance
-            val wDistance = mLastLocation.distanceTo(work)
-
-            if(wDistance < 400){
-                //Update state here
-                locLabel.text = "At Work"
-            }
-        }
-        catch (e: Exception){
-            val geocoder = Geocoder(this, Locale.getDefault())
-            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
-        }
-
-        //checking home address
-        try{
-            var home: Location? = Location("service Provider")
-            home = getLocationFromAddress(this, userProfile.getField("Home"))
-
-            //getting distance
-            val hDistance = mLastLocation.distanceTo(home)
-
-            if(hDistance < 400){
-                //Update state here
-                locLabel.text = "At Home"
-            }
+            wDistance  = mLastLocation.distanceTo(work)
         }catch (e: Exception){
             val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
+        try {
+            home = getLocationFromAddress(this, userProfile.getField("Home"))
+            hDistance  = mLastLocation.distanceTo(home)
+        }catch (e: Exception){
+            val geocoder = Geocoder(this, Locale.getDefault())
+            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+        }
+
+            when {
+                sDistance < 400 && sDistance >= 0 -> {
+                    stateHelper.location = "School"
+                }
+                wDistance < 400 && wDistance >= 0 -> {
+                    stateHelper.location = "Work"
+                }
+                hDistance < 400 && hDistance >= 0 -> {
+                    stateHelper.location = "Home"
+                }
+                else -> {
+                    stateHelper.location = "None"
+                }
+            }
 
     }
 

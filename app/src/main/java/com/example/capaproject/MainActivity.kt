@@ -57,6 +57,10 @@ class MainActivity : AppCompatActivity() {
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
     lateinit var userProfile : UserProfile
 
+    var schoolDialog = true
+    var workDialog = true
+    var homeDialog = true
+
     //
     private var currentWidgetList = mutableListOf<AppWidgetProviderInfo>()
     private lateinit var mAppWidgetManager: AppWidgetManager
@@ -449,21 +453,33 @@ companion object{
             school = getLocationFromAddress(this, userProfile.getField("School"))
             sDistance  = mLastLocation.distanceTo(school)
         }catch (e: Exception){
-            val geocoder = Geocoder(this, Locale.getDefault())
+            if(schoolDialog) {
+                schoolDialog = false
+                addressDialog("School")
+            }
+            //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
         try {
             work = getLocationFromAddress(this, userProfile.getField("Work"))
             wDistance  = mLastLocation.distanceTo(work)
         }catch (e: Exception){
-            val geocoder = Geocoder(this, Locale.getDefault())
+            if(workDialog) {
+                workDialog = false
+                addressDialog("Work")
+            }
+            //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
         try {
             home = getLocationFromAddress(this, userProfile.getField("Home"))
             hDistance  = mLastLocation.distanceTo(home)
         }catch (e: Exception){
-            val geocoder = Geocoder(this, Locale.getDefault())
+            if(homeDialog) {
+                homeDialog = false
+                addressDialog("Home")
+            }
+            //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
 
@@ -482,6 +498,16 @@ companion object{
                 }
             }
 
+    }
+
+    private fun addressDialog(type: String){
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Problem with $type address, please see User Survey to correct.")
+        builder.setPositiveButton("OK"){ dialog, _ ->
+            dialog.cancel()
+        }
+        builder.create()
+        builder.show()
     }
 
     //translating lat and long from a string address

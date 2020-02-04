@@ -206,7 +206,7 @@ companion object{
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getContext()
 
-                //text.text=userProfile.getField("School")
+                //text.text=userProfile.getField("BirthDay")
                 //placeholder for testing state changes
                 if(currentActivity == "Still"){
                     guiHelper.updateUserState("default")

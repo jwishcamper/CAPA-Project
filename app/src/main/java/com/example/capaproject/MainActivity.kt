@@ -1,60 +1,38 @@
 package com.example.capaproject
 
 import android.Manifest
-import android.app.ActionBar
 import android.content.ComponentName
-import android.content.DialogInterface
-import android.graphics.Point
 import android.os.Bundle
-import android.text.InputType
 import android.util.Log
-import android.view.Display
 import android.view.View
-import android.view.View.GONE
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
-import com.google.android.material.textfield.TextInputLayout
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
 import kotlin.collections.HashMap
 import kotlin.concurrent.fixedRateTimer
 import android.app.Activity
-import android.app.PendingIntent.getActivity
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ComponentInfo
 import android.content.pm.PackageManager
 import android.view.*
-import kotlinx.android.synthetic.main.activity_main.*
-import java.util.ArrayList
-import kotlin.concurrent.fixedRateTimer
-import androidx.core.app.ActivityCompat.startActivityForResult
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.os.Looper
-import android.os.UserHandle
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.io.IOException
 import java.lang.Exception
+import java.util.*
+import android.content.res.Resources
+import androidx.appcompat.app.AlertDialog
+import java.util.ArrayList
 
 //currently unused from fragment logic
 /*
@@ -77,13 +55,23 @@ class MainActivity : AppCompatActivity() {
     private val INTERVAL: Long = 2000
     private val FASTEST_INTERVAL: Long = 1000
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
+    lateinit var userProfile : UserProfile
+
+    var schoolDialog = true
+    var workDialog = true
+    var homeDialog = true
+
     //
     private var currentWidgetList = mutableListOf<AppWidgetProviderInfo>()
     private lateinit var mAppWidgetManager: AppWidgetManager
-    private lateinit var mAppWidgetHost: AppWidgetHost
+    private lateinit var mAppWidgetHost: WidgetHost
     private val APPWIDGET_HOST_ID = 1
     private val REQUEST_PICK_APPWIDGET = 2
     private val REQUEST_CREATE_APPWIDGET = 3
+    private val REQUEST_APPWIDGET_CLOCK_CHAIN = 4
+    private val REQUEST_APPWIDGET_MUSIC_CHAIN = 5
+    private val REQUEST_APPWIDGET_CLOCK = 6
+    private val REQUEST_APPWIDGET_MUSIC = 7
     lateinit var infos : List<AppWidgetProviderInfo>
 
     private lateinit var mainlayout: ViewGroup
@@ -91,6 +79,9 @@ class MainActivity : AppCompatActivity() {
     //helper object to determine user state
     private lateinit var stateHelper: stateChange
     private lateinit var guiHelper : CAPAstate
+
+    private lateinit var prefs : UserPrefApps
+    private var cnToChange = ComponentName("","")
 
     private lateinit var databaseHandler : DatabaseHandler
 
@@ -105,70 +96,109 @@ class MainActivity : AppCompatActivity() {
 companion object{
     var currentActivity : String = "None"
 }
+    //private val databaseHandler = DatabaseHandler(this)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        //starts location updates
-        mLocationRequest = LocationRequest()
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        if (checkPermissionForLocation(this)) {
-            startLocationUpdates()
-        }
-
-        //databaseHandler.deleteInfo()
-        //databaseHandler.addSurveyInfo("Address", "Bothell")
-        //databaseHandler.addSurveyInfo("Birthday", "01/17")
-        //databaseHandler.updateSurveyInfo("Address", "Bellevue")
+        /*
         val testComp = ComponentName(
             "com.google.android.googlequicksearchbox",
             "com.google.android.googlequicksearchbox.SearchWidgetProvider"
         )
+*/
 
-        //val testDouble = 35.2
-        //val map: HashMap<ComponentName, Double> = HashMap()
-        //map[testComp] = testDouble
-        //databaseHandler.addState("atWork", map)
-        //val map2: HashMap<ComponentName, Double> = databaseHandler.getState("atWork")
-        //Log.d("test", map2.toString())
+
         mainlayout = findViewById(R.id.mainLayout)
 
         //database variables
         databaseHandler = DatabaseHandler(this)
+
+        userProfile = databaseHandler.getSurvey()
+            //text.text=userProfile.getField("BirthDay")
 
         //NUKE THE DATABASE!!!!!
         //databaseHandler.deleteInfo()
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
-        mAppWidgetHost = AppWidgetHost(this, APPWIDGET_HOST_ID)
+        mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
 
         //screenHeight = getScreenHeight()
-        stateHelper = stateChange(this)
-        guiHelper = CAPAstate(this,databaseHandler)
-        guiHelper.updateUserState("atWork")
-        updateContext()
 
-        val compSearch = ComponentName(
-            "com.google.android.googlequicksearchbox",
-            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
-        )
-        val compAnalogClock = ComponentName(
-            "com.google.android.deskclock",
-            "com.android.alarmclock.AnalogAppWidgetProvider"
-        )
-        val compMusic = ComponentName(
-            "com.google.android.music",
-            "com.android.music.MediaAppWidgetProvider"
-        )
+        prefs = UserPrefApps()
+        //Load preferences from database here
+        prefs = databaseHandler.getUserPrefs()
+
+        //If user has never set prefs, ask for default widgets
+        if(prefs.isEmpty())
+            queryUserPrefWidget("Clock")
+        else
+            finishOnCreate()
     }
 
+    private fun finishOnCreate(){
+
+        //starts location updates
+        mLocationRequest = LocationRequest()
+
+
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (checkPermissionForLocation(this)) {
+            startLocationUpdates()
+        }
+        stateHelper = stateChange(this)
+        guiHelper = CAPAstate(this, databaseHandler, prefs)
+        guiHelper.updateUserState("atWork")
+        updateContext()
+    }
+    //Initial query to ask user for all defaults if none exist
+    fun queryUserPrefWidget(widgetType : String){
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Please select your preferred $widgetType widget from the following list: ")
+        builder.setPositiveButton("OK") { dialog, _ ->
+            val appWidgetId = this.mAppWidgetHost.allocateAppWidgetId()
+            val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
+            pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            when(widgetType) {
+                in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK_CHAIN)
+                "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC_CHAIN)
+            }
+        }
+        builder.create()
+        builder.show()
+
+    }
+    //for changing individual default widgets
+    private fun helperQueryUserPrefWidget(widgetType : String){
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Please select your preferred $widgetType widget from the following list: ")
+        builder.setPositiveButton("OK") { dialog, _ ->
+            val appWidgetId = this.mAppWidgetHost.allocateAppWidgetId()
+            val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
+            pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            when(widgetType) {
+                in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK)
+                "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC)
+            }
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.cancel()
+        }
+        builder.create()
+        builder.show()
+
+    }
+
+    //Build the GUI given a hashmap. Called from CAPAstate.setState
     fun buildGUI(frags : HashMap<ComponentName, Double>){
         removeAllWidgets()
         val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
         for (entry in sorted) {
+            //Log.d("Trying to build: ",entry.key.className)
             createDefaultWidget(entry.key)
             //createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
         }
@@ -180,12 +210,18 @@ companion object{
         fixedRateTimer("timer",false,0,1000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getContext()
+
+                //text.text=userProfile.getField("BirthDay")
+                //placeholder for testing state changes
                 if(currentActivity == "Still"){
                     guiHelper.updateUserState("default")
                 }
                 else if(currentActivity!="Still") {
                     guiHelper.updateUserState("atWork")
                 }
+                //Log.d("PrefClock: ",prefs.clock.className)
+                //Log.d("PrefMusic: ",prefs.music.className)
+                //guiHelper.refresh()
             }
         }
     }
@@ -217,6 +253,12 @@ companion object{
             appWidgetId, appWidgetInfo
         )
         hostView.setAppWidget(appWidgetId, appWidgetInfo)
+        hostView.setOnLongClickListener {
+            Log.d("TAG", "long click createWidget")
+            guiHelper.removeWidget(cn)
+//            removeWidget(hostView)
+            true
+        }
         mainlayout.addView(hostView)
     }
 
@@ -232,10 +274,33 @@ companion object{
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == REQUEST_PICK_APPWIDGET) {
-                configureWidget(data!!)
-            } else if (requestCode == REQUEST_CREATE_APPWIDGET) {
-                createWidget(data!!)
+            when (requestCode) {
+                REQUEST_PICK_APPWIDGET -> configureWidget(data!!)
+                REQUEST_CREATE_APPWIDGET -> createWidget(data!!)
+                REQUEST_APPWIDGET_CLOCK_CHAIN -> {
+                    prefs.clock = widgetPrefHelper(data!!)
+                    queryUserPrefWidget("Music")
+                }
+                REQUEST_APPWIDGET_MUSIC_CHAIN -> {
+                    prefs.music = widgetPrefHelper(data!!)
+                    finishOnCreate()
+                }
+                REQUEST_APPWIDGET_MUSIC -> {
+                    prefs.music = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.music)
+                    }
+                }
+                REQUEST_APPWIDGET_CLOCK -> {
+                    prefs.clock = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.clock)
+                    }
+                }
+
+
             }
         } else if (resultCode == Activity.RESULT_CANCELED && data != null) {
             val appWidgetId = data.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
@@ -243,6 +308,15 @@ companion object{
                 mAppWidgetHost.deleteAppWidgetId(appWidgetId)
             }
         }
+    }
+    private fun widgetPrefHelper(data: Intent) : ComponentName{
+        val extras = data.extras
+        val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+        val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
+        return ComponentName(
+            appWidgetInfo.provider.packageName,
+            appWidgetInfo.provider.className
+        )
     }
     private fun configureWidget(data: Intent) {
         val extras = data.extras
@@ -266,8 +340,7 @@ companion object{
             this.applicationContext,
             appWidgetId, appWidgetInfo
         )
-        hostView.setAppWidget(appWidgetId, appWidgetInfo)
-        mainlayout.addView(hostView)
+
 
 
         val cn = ComponentName(
@@ -275,22 +348,39 @@ companion object{
             appWidgetInfo.provider.className
         )
         guiHelper.addWidget(cn)
-        Log.d("TAG",appWidgetInfo.provider.packageName)
-        Log.d("TAG",appWidgetInfo.provider.className)
+        //Log.d("TAG",appWidgetInfo.provider.packageName)
+        //Log.d("TAG",appWidgetInfo.provider.className)
 
-
-        currentWidgetList.add(appWidgetInfo)
+//        hostView.setAppWidget(appWidgetId, appWidgetInfo)
+//        hostView.setOnLongClickListener {
+//            Log.d("TAG", "long click createWidget")
+////            removeWidget(hostView)
+//            guiHelper.removeWidget(cn)
+//            true
+//        }
+//        mainlayout.addView(hostView)
+//
+//        currentWidgetList.add(appWidgetInfo)
     }
 
-
+    override fun onResume(){
+        super.onResume()
+        userProfile = databaseHandler.getSurvey()
+    }
     override fun onPause(){
         super.onPause()
-        databaseHandler.updateState(guiHelper.getState(),guiHelper.getList())
-        //save current UI state to database here
+        
+        //save current UI for current state to database
+        if(::guiHelper.isInitialized)
+            databaseHandler.updateDatabaseState(guiHelper.getState(),guiHelper.getList())
+
+        //Save user pref apps to database here
+        databaseHandler.updateUserPrefs(prefs)
     }
     override fun onStart() {
         super.onStart()
         mAppWidgetHost.startListening()
+        userProfile = databaseHandler.getSurvey()
     }
 
     override fun onStop() {
@@ -320,27 +410,30 @@ companion object{
 
         if (id == R.id.action_setting) {
 
-            var map = HashMap<String, String>()
-
-
-            //load info from database
-            map = databaseHandler.getSurveyInfo()
-            if(map.isEmpty()) {
-                map["Home"] = ""
-                map["Work"] = ""
-                map["School"] = ""
-                map["Gender"] = "Other"
-                map["BirthDay"] = "01/01/1930"
-            }
-
-            val surveyOne = Survey(map,this)
-
-
+            val surveyOne = Survey(userProfile,this)
 
             val intent = Intent(this, surveyOne.javaClass)
             startActivity(intent)
             Toast.makeText(this, "User Survey", Toast.LENGTH_SHORT).show()
 
+        }
+        else if(id == R.id.prefApps){
+            //display list of widgets to user
+            val res: Resources = resources
+            val widgetList = res.getStringArray(R.array.Widgets)
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Select widget to change default:")
+                .setItems(widgetList) { dialog, which ->
+                    //remove old widget from stateMap
+                    cnToChange = prefs.getAttr(widgetList[which])
+                    helperQueryUserPrefWidget(widgetList[which])
+                    dialog.dismiss()
+                }
+                builder.setNegativeButton("Cancel") { dialog, _ ->
+                    dialog.cancel()
+                }
+                builder.create()
+                builder.show()
         }
 
         return super.onOptionsItemSelected(item)
@@ -359,69 +452,77 @@ companion object{
         //new location has now been determined
         mLastLocation = location
 
+        //userProfile = databaseHandler.getSurvey()
         //checking if you are close to one of you survey addresses
-        var map = HashMap<String, String>()
-        map = databaseHandler.getSurveyInfo()
-
-        var sLoc = ""
-        var wLoc = ""
-        var hLoc = ""
-
-
-        sLoc = map.get("School").toString()
-        wLoc = map.get("Work").toString()
-        hLoc = map.get("Home").toString()
-
 
         //checking school address
+        val school : Location?
+        val work : Location?
+        val home : Location?
+        var sDistance : Float = (-1).toFloat()
+        var wDistance : Float = (-1).toFloat()
+        var hDistance : Float = (-1).toFloat()
+
         try {
-            var school: Location? = Location("service Provider")
-            school = getLocationFromAddress(this, sLoc)
-
-            //getting distance
-            var sDistance = mLastLocation.distanceTo(school)
-
-            if(sDistance < 400){
-                locLabel.text = "At School"
-            }
+            school = getLocationFromAddress(this, userProfile.getField("School"))
+            sDistance  = mLastLocation.distanceTo(school)
         }catch (e: Exception){
-            val geocoder = Geocoder(this, Locale.getDefault())
-            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
-        }
-
-        //checking work address
-        try{
-            var work: Location? = Location("service Provider")
-            work = getLocationFromAddress(this, wLoc)
-
-            //getting distance
-            var wDistance = mLastLocation.distanceTo(work)
-
-            if(wDistance < 400){
-                locLabel.text = "At Work"
+            if(schoolDialog && userProfile.getField("School")!="None") {
+                schoolDialog = false
+                addressDialog("School")
             }
+            //val geocoder = Geocoder(this, Locale.getDefault())
+            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
-        catch (e: Exception){
-            val geocoder = Geocoder(this, Locale.getDefault())
-            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
-        }
-
-        //checking home address
-        try{
-            var home: Location? = Location("service Provider")
-            home = getLocationFromAddress(this, hLoc)
-
-            //getting distance
-            var hDistance = mLastLocation.distanceTo(home)
-
-            if(hDistance < 400){
-                locLabel.text = "At Home"
-            }
+        try {
+            work = getLocationFromAddress(this, userProfile.getField("Work"))
+            wDistance  = mLastLocation.distanceTo(work)
         }catch (e: Exception){
-            val geocoder = Geocoder(this, Locale.getDefault())
-            locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+            if(workDialog && userProfile.getField("Work")!="None") {
+                workDialog = false
+                addressDialog("Work")
+            }
+            //val geocoder = Geocoder(this, Locale.getDefault())
+            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
+        }
+        try {
+            home = getLocationFromAddress(this, userProfile.getField("Home"))
+            hDistance  = mLastLocation.distanceTo(home)
+        }catch (e: Exception){
+            if(homeDialog && userProfile.getField("Home")!="None") {
+                homeDialog = false
+                addressDialog("Home")
+            }
+            //val geocoder = Geocoder(this, Locale.getDefault())
+            //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
 
+        when {
+            sDistance < 400 && sDistance >= 0 -> {
+                stateHelper.location = "School"
+            }
+            wDistance < 400 && wDistance >= 0 -> {
+                stateHelper.location = "Work"
+            }
+            hDistance < 400 && hDistance >= 0 -> {
+                stateHelper.location = "Home"
+            }
+            else -> {
+                stateHelper.location = "None"
+            }
+        }
+
+    }
+
+    private fun addressDialog(type: String){
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Problem with $type address, please see User Survey to correct.")
+        builder.setMessage("Enter \"None\" into the field to ignore this message in the future.")
+        builder.setPositiveButton("OK"){ dialog, _ ->
+            dialog.cancel()
+        }
+        builder.create()
+        builder.show()
     }
 
     //translating lat and long from a string address
@@ -454,9 +555,9 @@ companion object{
     protected fun startLocationUpdates(){
 
         //create the location request to start receiving updates
-        mLocationRequest!!.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        mLocationRequest!!.setInterval(INTERVAL)
-        mLocationRequest!!.setFastestInterval(FASTEST_INTERVAL)
+        mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        mLocationRequest.interval = INTERVAL
+        mLocationRequest.fastestInterval = FASTEST_INTERVAL
 
         //create locationsettingrequest object using location request
         val builder = LocationSettingsRequest.Builder()
@@ -593,6 +694,10 @@ companion object{
         supportFragmentManager.inTransaction { remove(fragment) }
     }
 
+    override fun onDestroy() {
+        databaseHandler!!.close()
+        super.onDestroy()
+    }
         //logic to add a new widget to current state using floating action button
     fun clickAdd(view:View){
 

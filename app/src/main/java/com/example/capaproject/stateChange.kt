@@ -15,6 +15,7 @@ import java.util.*
 @Suppress("DEPRECATION")
 class stateChange(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
 
+    var location = "None"
 
     private var mApiClient: GoogleApiClient = GoogleApiClient.Builder(context)
         .addApi(ActivityRecognition.API)
@@ -82,7 +83,8 @@ class stateChange(private val context : Context) : GoogleApiClient.ConnectionCal
 
 
     fun getContext() : String{
-        return "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
+        return if(location=="None") "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
+        else "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Location: $location"
         //return "${getDate()}     Activity: ${MainActivity.currentActivity}"
     }
 }

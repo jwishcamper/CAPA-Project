@@ -497,26 +497,27 @@ companion object{
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
 
-            when {
-                sDistance < 400 && sDistance >= 0 -> {
-                    stateHelper.location = "School"
-                }
-                wDistance < 400 && wDistance >= 0 -> {
-                    stateHelper.location = "Work"
-                }
-                hDistance < 400 && hDistance >= 0 -> {
-                    stateHelper.location = "Home"
-                }
-                else -> {
-                    stateHelper.location = "None"
-                }
+        when {
+            sDistance < 400 && sDistance >= 0 -> {
+                stateHelper.location = "School"
             }
+            wDistance < 400 && wDistance >= 0 -> {
+                stateHelper.location = "Work"
+            }
+            hDistance < 400 && hDistance >= 0 -> {
+                stateHelper.location = "Home"
+            }
+            else -> {
+                stateHelper.location = "None"
+            }
+        }
 
     }
 
     private fun addressDialog(type: String){
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Problem with $type address, please see User Survey to correct. Enter \"None\" into field to ignore this message. ")
+        builder.setTitle("Problem with $type address, please see User Survey to correct.")
+        builder.setMessage("Enter \"None\" into the field to ignore this message in the future.")
         builder.setPositiveButton("OK"){ dialog, _ ->
             dialog.cancel()
         }

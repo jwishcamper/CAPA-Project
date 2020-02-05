@@ -24,7 +24,7 @@ public class ActivityIntentService extends IntentService {
 
         switch( probableActivities.getType() ) {
             case DetectedActivity.IN_VEHICLE: {
-                //Log.e( "ActivityRecogition", "In Vehicle: " + probableActivities.getConfidence() );
+                //Log.e( "ActivityRecognition", "In Vehicle: " + probableActivities.getConfidence() );
                 //MainActivity.t.setText("In Vehicle: " + probableActivities.getConfidence());
                 MainActivity.Companion.setCurrentActivity("In Vehicle");
                 break;

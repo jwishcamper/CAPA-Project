@@ -1,14 +1,13 @@
 package com.example.capaproject
 
 import android.content.ComponentName
-import android.util.Log
 
-class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
+class CAPAstate(context:MainActivity, val db : DatabaseHandler, val prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<ComponentName, Double> = HashMap()
     //List of possible states stores as CAPAhandler objects
-    var atWork : CAPAhandler = atWorkState(this,context)
-    var default : CAPAhandler = defaultState(this,context)
+    var atWork : CAPAhandler = atWorkState(this,context,prefs)
+    var default : CAPAhandler = defaultState(this,context,prefs)
 
     //current state will refer to one of the above possible state variables
     var currentState : CAPAhandler
@@ -20,7 +19,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
         //save hashmap for current state to database
-        db.addState(getState(),stateMap)
+        db.updateDatabaseState(getState(),stateMap)
 
         when(newState){
             in "atWork" -> setState(atWork)
@@ -33,22 +32,34 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
         if(newState != currentState) {
             currentState = newState
             //load the user prefs from database
-            stateMap = db.getState(getState())
+            stateMap = db.getStateInfo(getState())!!
             if(stateMap.isEmpty())
                 currentState.updateGUI()
             else
                 currentState.updateGUI(stateMap)
         }
     }
-
+    fun removeWidget(name:ComponentName){
+        stateMap.remove(name)
+        refresh()
+    }
     //called when a user adds a custom widget to state.
     fun addWidget(name:ComponentName){
         //add new widget name to hashmap
         //Logic to add new widget at slot 0 then change weight of next one up
         val sorted = stateMap.toList().sortedBy { (_, value) -> value}.toMap()
         val firstKey = sorted.keys.toTypedArray()[0]
-        val secondKey = sorted.keys.toTypedArray()[1]
-        stateMap[firstKey] = (stateMap[firstKey]!!+stateMap[secondKey]!!)/2
+
+        //if there are 2 or more elements, squish the smallest's value between 0 and the second smallest value
+        if(sorted.size > 1) {
+            val secondKey = sorted.keys.toTypedArray()[1]
+            stateMap[firstKey] = (stateMap[firstKey]!! + stateMap[secondKey]!!) / 2
+        }
+        //if there is only 1 element, just set the only element to 1.0
+        else
+            stateMap[firstKey] = 1.0
+
+        //set new CN to weight 0.0
         stateMap[name]=0.0
 
 
@@ -58,14 +69,13 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
         for (entry in stateMap) {
             Log.d("TAG",entry.key.className)
             Log.d("TAG",entry.value.toString())
-
         }*/
 
         //refresh display based on new hashmap.
         refresh()
 
     }
-    private fun refresh(){
+    fun refresh(){
         currentState.updateGUI(stateMap)
     }
     //returns a hashmap variable with current state - to save to database
@@ -80,7 +90,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
     //gets current state as a string
     fun getState() : String {
         return if(currentState==atWork) "atWork"
-            else "default"
+        else "default"
 
     }
 }

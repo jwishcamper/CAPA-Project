@@ -2,7 +2,7 @@ package com.example.capaproject
 
 import android.content.ComponentName
 
-class defaultState(newCstate: CAPAstate,val context: MainActivity) : CAPAhandler{
+class defaultState(newCstate: CAPAstate,val context: MainActivity, prefs : UserPrefApps) : CAPAhandler{
     var capastate : CAPAstate = newCstate
 
     override fun updateGUI() {

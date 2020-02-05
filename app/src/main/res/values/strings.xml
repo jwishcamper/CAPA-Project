@@ -69,4 +69,9 @@
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">Add widget</string>
 
+    <string-array name="Widgets">
+        <item>Clock</item>
+        <item>Music</item>
+    </string-array>
+
 </resources>

@@ -65,6 +65,12 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler) {
         refresh()
 
     }
+
+    fun removeWidget(name:ComponentName) {
+        stateMap.remove(name)
+        refresh()
+    }
+
     private fun refresh(){
         currentState.updateGUI(stateMap)
     }

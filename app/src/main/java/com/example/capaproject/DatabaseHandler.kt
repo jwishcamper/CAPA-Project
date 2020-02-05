@@ -87,6 +87,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     //save state to database given a string statename and a hashmap
     fun addState(stateName: String, map: HashMap<ComponentName, Double>){
         val db = this.writableDatabase
+        db.execSQL(WORK_DELETE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
         for(entry in map){
             val pkg = entry.key.packageName

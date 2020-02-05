@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
     //
     private var currentWidgetList = mutableListOf<AppWidgetProviderInfo>()
     private lateinit var mAppWidgetManager: AppWidgetManager
-    private lateinit var mAppWidgetHost: AppWidgetHost
+    private lateinit var mAppWidgetHost: WidgetHost
     private val APPWIDGET_HOST_ID = 1
     private val REQUEST_PICK_APPWIDGET = 2
     private val REQUEST_CREATE_APPWIDGET = 3
@@ -175,6 +175,12 @@ companion object{
             appWidgetId, appWidgetInfo
         )
         hostView.setAppWidget(appWidgetId, appWidgetInfo)
+        hostView.setOnLongClickListener {
+            Log.d("TAG", "long click createWidget")
+            guiHelper.removeWidget(cn)
+//            removeWidget(hostView)
+            true
+        }
         mainlayout.addView(hostView)
     }
 
@@ -224,8 +230,7 @@ companion object{
             this.applicationContext,
             appWidgetId, appWidgetInfo
         )
-        hostView.setAppWidget(appWidgetId, appWidgetInfo)
-        mainlayout.addView(hostView)
+
 
 
         val cn = ComponentName(
@@ -236,6 +241,14 @@ companion object{
         Log.d("TAG",appWidgetInfo.provider.packageName)
         Log.d("TAG",appWidgetInfo.provider.className)
 
+        hostView.setAppWidget(appWidgetId, appWidgetInfo)
+        hostView.setOnLongClickListener {
+            Log.d("TAG", "long click createWidget")
+//            removeWidget(hostView)
+            guiHelper.removeWidget(cn)
+            true
+        }
+        mainlayout.addView(hostView)
 
         currentWidgetList.add(appWidgetInfo)
     }

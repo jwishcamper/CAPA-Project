@@ -467,7 +467,7 @@ companion object{
             school = getLocationFromAddress(this, userProfile.getField("School"))
             sDistance  = mLastLocation.distanceTo(school)
         }catch (e: Exception){
-            if(schoolDialog) {
+            if(schoolDialog && userProfile.getField("School")!="None") {
                 schoolDialog = false
                 addressDialog("School")
             }
@@ -478,7 +478,7 @@ companion object{
             work = getLocationFromAddress(this, userProfile.getField("Work"))
             wDistance  = mLastLocation.distanceTo(work)
         }catch (e: Exception){
-            if(workDialog) {
+            if(workDialog && userProfile.getField("Work")!="None") {
                 workDialog = false
                 addressDialog("Work")
             }
@@ -489,7 +489,7 @@ companion object{
             home = getLocationFromAddress(this, userProfile.getField("Home"))
             hDistance  = mLastLocation.distanceTo(home)
         }catch (e: Exception){
-            if(homeDialog) {
+            if(homeDialog && userProfile.getField("Home")!="None") {
                 homeDialog = false
                 addressDialog("Home")
             }
@@ -516,7 +516,7 @@ companion object{
 
     private fun addressDialog(type: String){
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Problem with $type address, please see User Survey to correct.")
+        builder.setTitle("Problem with $type address, please see User Survey to correct. Enter \"None\" into field to ignore this message. ")
         builder.setPositiveButton("OK"){ dialog, _ ->
             dialog.cancel()
         }

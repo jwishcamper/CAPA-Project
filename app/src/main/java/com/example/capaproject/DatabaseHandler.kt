@@ -210,7 +210,6 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
         for(entry in profile.getFieldNames()){
             val answer = profile.getField(entry)
-
             val values = ContentValues().apply{
                 put(SurveyEntry.COLUMN_QUESTION, entry)
                 put(SurveyEntry.COLUMN_ANSWER, answer)
@@ -276,7 +275,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
                 "Work" -> work = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
                 "School" -> school = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
                 "Gender" -> gender = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
-                "Birthday" -> birthday = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
+                "BirthDay" -> birthday = cursor.getString(cursor.getColumnIndex(SurveyEntry.COLUMN_ANSWER))
             }
             cursor.moveToNext()
         }

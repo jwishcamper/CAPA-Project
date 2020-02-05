@@ -3,6 +3,7 @@ package com.example.capaproject
 import android.content.Context
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -57,8 +58,8 @@ class Survey() : AppCompatActivity() {
         }
 
         //dividing birthday
-        var b = prof.getField("Birthday")
-        if (!b.contains("/"))
+        var b = prof.getField("BirthDay")
+        if (b=="")
             b = "01/01/1930"
         val birth: List<String> = b.split("/")
 
@@ -130,15 +131,16 @@ class Survey() : AppCompatActivity() {
         val month = monthSpin.selectedItem.toString()
         val day = daySpin.selectedItem.toString()
         val yr = yearSpin.selectedItem.toString()
-
+/*
         val map = HashMap<String, String>()
         map["Home"] = home
         map["Work"] = work
         map["School"] = school
         map["Gender"] = gender
         map["BirthDay"] = "$month/$day/$yr"
-
+*/
         //making profile object for information
+
         val profileObj = UserProfile(home, work, school, gender, "$month/$day/$yr")
 
 

@@ -1,6 +1,6 @@
 package com.example.capaproject
 
-class UserProfile(private var h:String,private var w:String,private var s:String,private var g:String,private var b:String){
+class UserProfile(h:String, w:String, s:String, g:String, b:String){
     private var home = h
     private var work = w
     private var school = s
@@ -19,17 +19,14 @@ class UserProfile(private var h:String,private var w:String,private var s:String
     }
 
     fun getField(s:String): String{
-        if (s == "Home")
-            return home
-        else if(s == "School")
-            return school
-        else if(s == "Work")
-            return work
-        else if(s == "Gender")
-            return gender
-        else if(s == "BirthDay")
-            return birthDate
-        return "NULL"
+        return when (s) {
+            "Home" -> home
+            "School" -> school
+            "Work" -> work
+            "Gender" -> gender
+            "BirthDay" -> birthDate
+            else -> "NULL"
+        }
     }
 
 }

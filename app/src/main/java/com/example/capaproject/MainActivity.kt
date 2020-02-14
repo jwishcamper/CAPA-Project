@@ -146,7 +146,7 @@ companion object{
 
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (checkPermissionForLocation(this)) {
-            startLocationUpdates()
+            //startLocationUpdates()
         }
         stateHelper = stateChange(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
@@ -386,6 +386,11 @@ companion object{
     override fun onStop() {
         super.onStop()
         mAppWidgetHost.stopListening()
+    }
+
+    override fun onDestroy() {
+        databaseHandler.close()
+        super.onDestroy()
     }
 
     private fun removeWidget(hostView: AppWidgetHostView) {

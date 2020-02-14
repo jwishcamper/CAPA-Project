@@ -6,17 +6,17 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
-import android.util.Log
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
 import com.example.capaproject.WorkReaderContract.WorkEntry
 import com.example.capaproject.UserPrefsContract.UserPrefsEntry
+import com.example.capaproject.UserDataContract.UserDataEntry
 
 //import com.example.capaproject.StateReaderContract.StateEntry
 
 
-const val WORK_TABLE_NAME = "atWork"
+private const val WORK_TABLE_NAME = "atWork"
 
-object SurveyReaderContract{
+private object SurveyReaderContract{
     object SurveyEntry : BaseColumns{
         const val TABLE_NAME = "Survey"
         const val COLUMN_QUESTION = "Question"
@@ -24,16 +24,17 @@ object SurveyReaderContract{
     }
 }
 
-/*object StateReaderContract{
-    object StateEntry : BaseColumns{
-        //const val TABLE_NAME = ""
-        const val COLUMN_PACKAGE = "Package"
-        const val COLUMN_CLASS = "Class"
-        const val COLUMN_WEIGHT = "Weight"
+private object UserDataContract{
+    object UserDataEntry : BaseColumns{
+        const val TABLE_NAME = "User Data"
+        const val COLUMN_DATE_TIME = "Date & Time"
+        const val COLUMN_STATE = "State"
+        const val COLUMN_LATITUDE = "Latitude"
+        const val COLUMN_LONGITUDE = "Longitude"
     }
-}*/
+}
 
-object WorkReaderContract{
+private object WorkReaderContract{
     object WorkEntry : BaseColumns{
         const val TABLE_NAME = "Work"
         const val COLUMN_PACKAGE = "Package"
@@ -42,7 +43,7 @@ object WorkReaderContract{
     }
 }
 
-object UserPrefsContract{
+private object UserPrefsContract{
     object UserPrefsEntry : BaseColumns{
         const val TABLE_NAME = "UserPrefs"
         const val COLUMN_WIDGET = "Widget"
@@ -71,21 +72,32 @@ private const val WORK_CREATE_ENTRIES =
             "${WorkEntry.COLUMN_CLASS} TEXT," +
             "${WorkEntry.COLUMN_WEIGHT} DOUBLE)"
 
+private const val USER_DATA_CREATE_ENTRIES =
+    "CREATE TABLE IF NOT EXISTS ${UserDataEntry.TABLE_NAME} (" +
+            "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${UserDataEntry.COLUMN_DATE_TIME} TEXT," +
+            "${UserDataEntry.COLUMN_STATE} TEXT)," +
+            "${UserDataEntry.COLUMN_LATITUDE} DOUBLE," +
+            "${UserDataEntry.COLUMN_LONGITUDE} DOUBLE"
+
 private const val SURVEY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${SurveyEntry.TABLE_NAME}"
 private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${WorkEntry.TABLE_NAME}"
 private const val USER_PREFS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPrefsEntry.TABLE_NAME}"
+private const val USER_DATA_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserDataEntry.TABLE_NAME}"
 
 class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(SURVEY_CREATE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
         db.execSQL(USER_PREFS_CREATE_ENTRIES)
+        db.execSQL(USER_DATA_CREATE_ENTRIES)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL(SURVEY_DELETE_ENTRIES)
         db.execSQL(WORK_DELETE_ENTRIES)
         db.execSQL(USER_PREFS_DELETE_ENTRIES)
+        //db.execSQL(USER_DATA_DELETE_ENTRIES)
         onCreate(db)
     }
     companion object{
@@ -95,6 +107,47 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
     fun updateUserPrefs(prefs: UserPrefApps){
         updateUserPrefsInfo(prefs)
+    }
+
+    //Function to update user preferences for every state
+    fun updateStatePrefs(prefs : UserPrefApps){
+        updateWorkPrefs(prefs)
+    }
+
+    //Function to update user preferences for Work state
+    private fun updateWorkPrefs(prefs: UserPrefApps) {
+        val db = this.writableDatabase
+        db.execSQL(WORK_CREATE_ENTRIES)
+
+        val clock = prefs.getAttr("Clock")
+        val music = prefs.getAttr("Music")
+
+        val clockPKG = clock.packageName
+        val clockCLS = clock.className
+
+        val clockValues = ContentValues().apply{
+            put(WorkEntry.COLUMN_PACKAGE, clockPKG)
+            put(WorkEntry.COLUMN_CLASS, clockCLS)
+        }
+
+        db.update(WorkEntry.TABLE_NAME, clockValues, "${WorkEntry.COLUMN_CLASS}=$clockCLS", null)
+
+        val musicPKG = music.packageName
+        val musicCLS = music.className
+
+        val musicValues = ContentValues().apply{
+            put(WorkEntry.COLUMN_PACKAGE, musicPKG)
+            put(WorkEntry.COLUMN_CLASS, musicCLS)
+        }
+
+        db.update(WorkEntry.TABLE_NAME, musicValues, "${WorkEntry.COLUMN_CLASS}=$musicCLS", null)
+
+        /*val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToFirst()
+        while(!cursor.isAfterLast){
+
+        }*/
     }
 
     //Adds or updates user preferences in database
@@ -126,7 +179,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
         db.replace(UserPrefsEntry.TABLE_NAME, null, values)
 
-        db.close()
+        //db.close()
     }
 
     fun getUserPrefs(): UserPrefApps{
@@ -183,7 +236,6 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             }
             db.insert(WorkEntry.TABLE_NAME, null, values)
         }
-        db.close()
     }
 
     //Updates state info in corresponding table using passed string to check which state
@@ -216,7 +268,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             }
             db.replace(SurveyEntry.TABLE_NAME, null, values)
         }
-        db.close()
+        //db.close()
     }
 
     //Uses passed string to get info from corresponding state table
@@ -281,5 +333,22 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
         cursor.close()
         return UserProfile(home, work, school, gender, birthday)
+    }
+
+    fun updateUserData(dateTime : String,  stateName : String, latitude : Double, longitude : Double){
+        updateUserDataInfo(dateTime, stateName, latitude, longitude)
+    }
+
+    private fun updateUserDataInfo(dateTime : String,  stateName : String, latitude : Double, longitude : Double){
+        val db = this.writableDatabase
+        db.execSQL(USER_DATA_CREATE_ENTRIES)
+
+        val values = ContentValues().apply {
+            put(UserDataEntry.COLUMN_DATE_TIME, dateTime)
+            put(UserDataEntry.COLUMN_STATE, stateName)
+            put(UserDataEntry.COLUMN_LATITUDE, latitude)
+            put(UserDataEntry.COLUMN_LONGITUDE, longitude)
+        }
+        db.insert(UserDataEntry.TABLE_NAME, null, values)
     }
 }

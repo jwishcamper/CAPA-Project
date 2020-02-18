@@ -104,12 +104,32 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
         val clock = prefs.getAttr("Clock")
         val music = prefs.getAttr("Music")
+        val search = prefs.getAttr("Search")
+        val email = prefs.getAttr("Email")
+        val calendar = prefs.getAttr("Calendar")
+        val notes = prefs.getAttr("Notes")
+        val weather = prefs.getAttr("Weather")
 
         val clockPKG = clock.packageName
         val clockCLS = clock.className
 
         val musicPKG = music.packageName
         val musicCLS = music.className
+
+        val searchPKG = search.packageName
+        val searchCLS = search.className
+
+        val emailPKG = email.packageName
+        val emailCLS = email.className
+
+        val calendarPKG = calendar.packageName
+        val calendarCLS = calendar.className
+
+        val notesPKG = notes.packageName
+        val notesCLS = notes.className
+
+        val weatherPKG = weather.packageName
+        val weatherCLS = weather.className
 
         var values = ContentValues().apply {
             put(UserPrefsEntry.COLUMN_WIDGET, "Clock")
@@ -126,6 +146,46 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
         db.replace(UserPrefsEntry.TABLE_NAME, null, values)
 
+        values.clear()
+
+        values.put(UserPrefsEntry.COLUMN_WIDGET, "Search")
+        values.put(UserPrefsEntry.COLUMN_PACKAGE, searchPKG)
+        values.put(UserPrefsEntry.COLUMN_CLASS, searchCLS)
+
+        db.replace(UserPrefsEntry.TABLE_NAME, null, values)
+
+        values.clear()
+
+        values.put(UserPrefsEntry.COLUMN_WIDGET, "Email")
+        values.put(UserPrefsEntry.COLUMN_PACKAGE, emailPKG)
+        values.put(UserPrefsEntry.COLUMN_CLASS, emailCLS)
+
+        db.replace(UserPrefsEntry.TABLE_NAME, null, values)
+
+        values.clear()
+
+        values.put(UserPrefsEntry.COLUMN_WIDGET, "Calendar")
+        values.put(UserPrefsEntry.COLUMN_PACKAGE, calendarPKG)
+        values.put(UserPrefsEntry.COLUMN_CLASS, calendarCLS)
+
+        db.replace(UserPrefsEntry.TABLE_NAME, null, values)
+
+        values.clear()
+
+        values.put(UserPrefsEntry.COLUMN_WIDGET, "Notes")
+        values.put(UserPrefsEntry.COLUMN_PACKAGE, notesPKG)
+        values.put(UserPrefsEntry.COLUMN_CLASS, notesCLS)
+
+        db.replace(UserPrefsEntry.TABLE_NAME, null, values)
+
+        values.clear()
+
+        values.put(UserPrefsEntry.COLUMN_WIDGET, "Weather")
+        values.put(UserPrefsEntry.COLUMN_PACKAGE, weatherPKG)
+        values.put(UserPrefsEntry.COLUMN_CLASS, weatherCLS)
+
+        db.replace(UserPrefsEntry.TABLE_NAME, null, values)
+        
         db.close()
     }
 
@@ -152,6 +212,11 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             when {
                 cursor.getString(cursor.getColumnIndex("Widget")) == "Clock" -> prefs.clock = compName
                 cursor.getString(cursor.getColumnIndex("Widget")) == "Music" -> prefs.music = compName
+                cursor.getString(cursor.getColumnIndex("Widget")) == "Search" -> prefs.search = compName
+                cursor.getString(cursor.getColumnIndex("Widget")) == "Email" -> prefs.email = compName
+                cursor.getString(cursor.getColumnIndex("Widget")) == "Calendar" -> prefs.calendar = compName
+                cursor.getString(cursor.getColumnIndex("Widget")) == "Notes" -> prefs.notes = compName
+                cursor.getString(cursor.getColumnIndex("Widget")) == "Weather" -> prefs.weather = compName
                 /*else -> {
                     prefs.clock = ComponentName("", "")
                     prefs.music = ComponentName("", "")
@@ -185,6 +250,35 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
         db.close()
     }
+
+    /*
+
+    private fun changeCNAllTables(newCN : ComponentName, oldCN : ComponentName){
+        val db = this.writableDatabase
+
+
+        val oldPkg = oldCN.packageName
+        val oldCls = oldCN.className
+        val newPkg = newCN.packageName
+        val newCls = newCN.className
+
+        val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME} WHERE ${WorkEntry.COLUMN_CLASS} = $oldCls"
+        val cursor = db.rawQuery(selectQuery, null)
+        if(cursor.count>0){
+            //do replace
+            cursor.getString(cursor.getColumnIndex(WorkEntry.COLUMN_CLASS))
+        }
+        else {
+            val values = ContentValues().apply {
+                put(WorkEntry.COLUMN_PACKAGE, pkg)
+                put(WorkEntry.COLUMN_CLASS, cls)
+                put(WorkEntry.COLUMN_WEIGHT, weight)
+            }
+            db.insert(WorkEntry.TABLE_NAME, null, values)
+        }
+        db.close()
+    }
+*/
 
     //Updates state info in corresponding table using passed string to check which state
     fun updateDatabaseState(stateName: String, map: HashMap<ComponentName, Double>){

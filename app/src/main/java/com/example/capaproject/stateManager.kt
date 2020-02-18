@@ -50,7 +50,7 @@ class stateManager(private val context : Context) : GoogleApiClient.ConnectionCa
 
 
     //returns time as string eg: "9:23 pm"
-    private fun getDateTime() : String {
+    private fun getTime() : String {
         val min = Calendar.getInstance().get(Calendar.MINUTE)
         var hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val minString = if(min < 10){ "0$min"}
@@ -81,10 +81,14 @@ class stateManager(private val context : Context) : GoogleApiClient.ConnectionCa
         return SimpleDateFormat("MM-dd-yyyy", Locale.getDefault()).format(Date())
     }
 
+    fun getDateTime() : String{
+        return "${getDate()}, ${getTime()}"
+    }
+
 
     fun getContext() : String{
-        return if(location=="None") "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
-        else "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Location: $location"
+        return if(location=="None") "${getDay()}, ${getTime()}     Activity: ${MainActivity.currentActivity}"
+        else "${getDay()}, ${getTime()}     Activity: ${MainActivity.currentActivity}    Location: $location"
         //return "${getDate()}     Activity: ${MainActivity.currentActivity}"
     }
 }

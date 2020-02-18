@@ -11,7 +11,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.collections.HashMap
 import kotlin.concurrent.fixedRateTimer
 import android.app.Activity
-import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
@@ -29,10 +28,12 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.io.IOException
 import java.lang.Exception
-import java.util.*
 import android.content.res.Resources
 import androidx.appcompat.app.AlertDialog
 import java.util.ArrayList
+import kotlin.reflect.*
+
+
 
 //currently unused from fragment logic
 /*
@@ -68,16 +69,20 @@ class MainActivity : AppCompatActivity() {
     private val APPWIDGET_HOST_ID = 1
     private val REQUEST_PICK_APPWIDGET = 2
     private val REQUEST_CREATE_APPWIDGET = 3
-    private val REQUEST_APPWIDGET_CLOCK_CHAIN = 4
-    private val REQUEST_APPWIDGET_MUSIC_CHAIN = 5
-    private val REQUEST_APPWIDGET_CLOCK = 6
-    private val REQUEST_APPWIDGET_MUSIC = 7
+    private val REQUEST_APPWIDGET_CLOCK = 4
+    private val REQUEST_APPWIDGET_MUSIC = 5
+    private val REQUEST_APPWIDGET_SEARCH = 6
+    private val REQUEST_APPWIDGET_EMAIL = 7
+    private val REQUEST_APPWIDGET_CALENDAR = 8
+    private val REQUEST_APPWIDGET_NOTES = 9
+    private val REQUEST_APPWIDGET_WEATHER = 10
+
     lateinit var infos : List<AppWidgetProviderInfo>
 
     private lateinit var mainlayout: ViewGroup
 
     //helper object to determine user state
-    private lateinit var stateHelper: stateChange
+    private lateinit var stateHelper: stateManager
     private lateinit var guiHelper : CAPAstate
 
     private lateinit var prefs : UserPrefApps
@@ -100,12 +105,7 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        /*
-        val testComp = ComponentName(
-            "com.google.android.googlequicksearchbox",
-            "com.google.android.googlequicksearchbox.SearchWidgetProvider"
-        )
-*/
+
 
 
         mainlayout = findViewById(R.id.mainLayout)
@@ -124,7 +124,6 @@ companion object{
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
-
         //screenHeight = getScreenHeight()
 
         prefs = UserPrefApps()
@@ -133,56 +132,54 @@ companion object{
 
         //If user has never set prefs, ask for default widgets
         if(prefs.isEmpty())
-            queryUserPrefWidget("Clock")
-        else
-            finishOnCreate()
-    }
+            setDefaultProviders()
 
-    private fun finishOnCreate(){
+        /*
+
+        Log.d("prefs:",prefs.clock.className)
+        Log.d("prefs:",prefs.music.className)
+        Log.d("prefs:",prefs.search.className)
+        Log.d("prefs:",prefs.email.className)
+        Log.d("prefs:",prefs.calendar.className)
+        Log.d("prefs:",prefs.notes.className)
+        Log.d("prefs:",prefs.weather.className)
+*/
 
         //starts location updates
         mLocationRequest = LocationRequest()
 
-
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (checkPermissionForLocation(this)) {
+
+            //comment following line out for use on emulator
+
             //startLocationUpdates()
         }
-        stateHelper = stateChange(this)
+        stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
         guiHelper.updateUserState("atWork")
         updateContext()
     }
-    //Initial query to ask user for all defaults if none exist
-    fun queryUserPrefWidget(widgetType : String){
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Please select your preferred $widgetType widget from the following list: ")
-        builder.setPositiveButton("OK") { dialog, _ ->
-            val appWidgetId = this.mAppWidgetHost.allocateAppWidgetId()
-            val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
-            pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            when(widgetType) {
-                in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK_CHAIN)
-                "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC_CHAIN)
-            }
-        }
-        builder.create()
-        builder.show()
 
-    }
     //for changing individual default widgets
     private fun helperQueryUserPrefWidget(widgetType : String){
 
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Please select your preferred $widgetType widget from the following list: ")
-        builder.setPositiveButton("OK") { dialog, _ ->
+        builder.setPositiveButton("OK") { _, _ ->
             val appWidgetId = this.mAppWidgetHost.allocateAppWidgetId()
             val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
             pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             when(widgetType) {
                 in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK)
                 "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC)
+                "Search" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_SEARCH)
+                "Email" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_EMAIL)
+                "Calendar" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CALENDAR)
+                "Notes" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_NOTES)
+                "Weather" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_WEATHER)
+
             }
         }
         builder.setNegativeButton("Cancel") { dialog, _ ->
@@ -190,6 +187,120 @@ companion object{
         }
         builder.create()
         builder.show()
+
+    }
+
+    //Search to set defaults if none exist
+    private fun setDefaultProviders(){
+        val clockArray = arrayOf(
+            ComponentName("com.sec.android.app.clockpackage", "com.sec.android.widgetapp.analogclock.AnalogClockWidgetProvider"),
+            ComponentName("com.sec.android.app.clockpackage", "com.sec.android.widgetapp.digitalclock.DigitalClockWidgetProvider"),
+            ComponentName("com.google.android.deskclock", "com.android.alarmclock.AnalogAppWidgetProvider"),
+            ComponentName("com.google.android.deskclock", "com.android.alarmclock.DigitalAppWidgetProvider"),
+            ComponentName("com.oneplus.deskclock", "com.oneplus.alarmclock.DigitalAppWidgetProvider"),
+            ComponentName("com.oneplus.deskclock", "com.oneplus.alarmclock.AnalogAppWidgetProvider"))
+
+        val musicArray = arrayOf(
+            ComponentName("com.google.android.music", "com.android.music.MediaAppWidgetProvider"),
+            ComponentName("com.spotify.music", "com.spotify.music.features.widget.SpotifyWidget"))
+
+        val searchArray = arrayOf(
+            ComponentName("com.google.android.googlequicksearchbox", "com.google.android.googlequicksearchbox.SearchWidgetProvider"),
+            ComponentName("com.android.chrome", "org.chromium.chrome.browser.searchwidget.SearchWidgetProvider"),
+            ComponentName("com.microsoft.launcher", "com.microsoft.bingsearchsdk.api.ui.widgets.SearchWidgetProvider"))
+
+        val emailArray = arrayOf(
+            ComponentName("com.samsung.android.email.provider", "com.samsung.android.email.widget.WidgetProvider"),
+            ComponentName("com.google.android.gm", "com.google.android.gm.widget.GmailWidgetProvider"),
+            ComponentName("com.microsoft.office.outlook", "com.acompli.acompli.InboxWidgetProvider"))
+
+        val calendarArray = arrayOf(
+            ComponentName("com.samsung.android.calendar", "com.android.calendar.widget.list.ListWidgetProvider"),
+            ComponentName("com.google.android.calendar", "com.android.calendar.widget.CalendarAppWidgetProvider"))
+
+        val notesArray = arrayOf(
+            ComponentName("com.samsung.android.app.notes", "com.samsung.android.app.notes.widget.WidgetProvider"),
+            ComponentName("com.microsoft.office.onenote", "com.microsoft.office.onenote.ui.widget.ONMTextNoteWidgetReceiver"))
+
+        val weatherArray = arrayOf(
+            ComponentName("com.sec.android.daemonapp","com.sec.android.daemonapp.appwidget.WeatherAppWidget"),
+            ComponentName("net.oneplus.weather", "net.oneplus.weather.widget.widget.WeatherWidgetProvider"))
+
+        for (info in infos) {
+            for(element in clockArray) {
+                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
+                    //we found one
+                    prefs.clock = ComponentName(
+                        info.provider.packageName,
+                        info.provider.className
+                    )
+                    break
+                }
+            }
+            for(element in musicArray){
+                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
+                    //we found one
+                    prefs.music = ComponentName(
+                        info.provider.packageName,
+                        info.provider.className
+                    )
+                    break
+                }
+            }
+            for(element in searchArray){
+                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
+                    //we found one
+                    prefs.search = ComponentName(
+                        info.provider.packageName,
+                        info.provider.className
+                    )
+                    break
+                }
+            }
+            for(element in emailArray){
+                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
+                    //we found one
+                    prefs.email = ComponentName(
+                        info.provider.packageName,
+                        info.provider.className
+                    )
+                    break
+                }
+            }
+            for(element in calendarArray){
+                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
+                    //we found one
+                    prefs.calendar = ComponentName(
+                        info.provider.packageName,
+                        info.provider.className
+                    )
+                    break
+                }
+            }
+            for(element in notesArray){
+                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
+                    //we found one
+                    prefs.notes = ComponentName(
+                        info.provider.packageName,
+                        info.provider.className
+                    )
+                    break
+                }
+            }
+            for(element in weatherArray){
+                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
+                    //we found one
+                    prefs.weather = ComponentName(
+                        info.provider.packageName,
+                        info.provider.className
+                    )
+                    break
+                }
+            }
+        }
+
+
+
 
     }
 
@@ -277,14 +388,6 @@ companion object{
             when (requestCode) {
                 REQUEST_PICK_APPWIDGET -> configureWidget(data!!)
                 REQUEST_CREATE_APPWIDGET -> createWidget(data!!)
-                REQUEST_APPWIDGET_CLOCK_CHAIN -> {
-                    prefs.clock = widgetPrefHelper(data!!)
-                    queryUserPrefWidget("Music")
-                }
-                REQUEST_APPWIDGET_MUSIC_CHAIN -> {
-                    prefs.music = widgetPrefHelper(data!!)
-                    finishOnCreate()
-                }
                 REQUEST_APPWIDGET_MUSIC -> {
                     prefs.music = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(cnToChange)) {
@@ -297,6 +400,41 @@ companion object{
                     if(guiHelper.stateMap.contains(cnToChange)) {
                         guiHelper.stateMap.remove(cnToChange)
                         guiHelper.addWidget(prefs.clock)
+                    }
+                }
+                REQUEST_APPWIDGET_SEARCH -> {
+                    prefs.search = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.search)
+                    }
+                }
+                REQUEST_APPWIDGET_EMAIL -> {
+                    prefs.email = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.email)
+                    }
+                }
+                REQUEST_APPWIDGET_CALENDAR -> {
+                    prefs.calendar = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.calendar)
+                    }
+                }
+                REQUEST_APPWIDGET_NOTES -> {
+                    prefs.notes = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.notes)
+                    }
+                }
+                REQUEST_APPWIDGET_WEATHER -> {
+                    prefs.weather = widgetPrefHelper(data!!)
+                    if(guiHelper.stateMap.contains(cnToChange)) {
+                        guiHelper.stateMap.remove(cnToChange)
+                        guiHelper.addWidget(prefs.weather)
                     }
                 }
 
@@ -369,7 +507,7 @@ companion object{
     }
     override fun onPause(){
         super.onPause()
-        
+
         //save current UI for current state to database
         if(::guiHelper.isInitialized)
             databaseHandler.updateDatabaseState(guiHelper.getState(),guiHelper.getList())
@@ -439,6 +577,14 @@ companion object{
                 }
                 builder.create()
                 builder.show()
+        }
+        else if(id == R.id.setWork){
+            Toast.makeText(this, "State Changed to Work", Toast.LENGTH_LONG).show()
+            guiHelper.updateUserState("atWork")
+        }
+        else if(id == R.id.setDefault){
+            Toast.makeText(this, "State Changed to Default", Toast.LENGTH_LONG).show()
+            guiHelper.updateUserState("default")
         }
 
         return super.onOptionsItemSelected(item)
@@ -520,6 +666,7 @@ companion object{
     }
 
     private fun addressDialog(type: String){
+        /*
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Problem with $type address, please see User Survey to correct.")
         builder.setMessage("Enter \"None\" into the field to ignore this message in the future.")
@@ -528,6 +675,7 @@ companion object{
         }
         builder.create()
         builder.show()
+        */
     }
 
     //translating lat and long from a string address

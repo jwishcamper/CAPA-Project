@@ -14,5 +14,21 @@
         android:title="Preferred Widgets"
         android:visible="true"
         app:showAsAction="never"/>
+    <item
+        android:id="@+id/setState"
+        android:title="Set State"
+        android:visible="true"
+        app:showAsAction="never">
 
+        <menu>
+            <item
+                android:id="@+id/setWork"
+                android:title="Work"
+                app:showAsAction="never"/>
+            <item
+                android:id="@+id/setDefault"
+                android:title="Default"
+                app:showAsAction="never"/>
+        </menu>
+    </item>
 </menu>

@@ -10,10 +10,10 @@ import com.google.android.gms.location.ActivityRecognition
 import java.text.SimpleDateFormat
 import java.util.*
 
-//goal of stateChange class - use information such as time, day of week,
+//goal of stateManager class - use information such as time, day of week,
 //location, and activity state to guess at the context of the user
 @Suppress("DEPRECATION")
-class stateChange(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
+class stateManager(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
 
     var location = "None"
 

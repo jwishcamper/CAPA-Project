@@ -525,6 +525,11 @@ companion object{
         mAppWidgetHost.stopListening()
     }
 
+    override fun onDestroy() {
+        databaseHandler.close()
+        super.onDestroy()
+    }
+
     private fun removeWidget(hostView: AppWidgetHostView) {
         //println(hostView.appWidgetId)
         mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)

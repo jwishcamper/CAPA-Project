@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mainlayout: ViewGroup
 
     //helper object to determine user state
-    private lateinit var stateHelper: stateManager
+    lateinit var stateHelper: stateManager
     private lateinit var guiHelper : CAPAstate
 
     private lateinit var prefs : UserPrefApps

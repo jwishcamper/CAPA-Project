@@ -427,6 +427,8 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val db = this.writableDatabase
         db.execSQL(SURVEY_CREATE_ENTRIES)
 
+
+
         for(entry in profile.getFieldNames()){
             val answer = profile.getField(entry)
             val values = ContentValues().apply{

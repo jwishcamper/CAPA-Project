@@ -26,13 +26,13 @@ import android.os.Build
 import android.os.Looper
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
-import java.io.IOException
 import java.lang.Exception
 import android.content.res.Resources
 import androidx.appcompat.app.AlertDialog
+import com.fasterxml.jackson.databind.DeserializationFeature
+import java.io.*
 import java.util.ArrayList
-import kotlin.reflect.*
-
+import com.fasterxml.jackson.module.kotlin.*
 
 
 //currently unused from fragment logic
@@ -158,6 +158,28 @@ companion object{
         guiHelper = CAPAstate(this, databaseHandler, prefs)
         guiHelper.updateUserState("atWork")
         updateContext()
+
+
+
+
+
+
+
+        val mapper = jacksonObjectMapper()
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
+
+        val prefString = mapper.writeValueAsString(prefs)
+
+        /*
+        val jsonString = mapper.writeValueAsString(infos[0])
+        Log.d("TAG",jsonString)
+        val prefsReloaded : AppWidgetProviderInfo = mapper.readValue(jsonString)
+        Log.d("TAG","pkg: ${prefsReloaded.provider.packageName}, cls: ${prefsReloaded.provider.className}, shortclass: ${prefsReloaded.provider.shortClassName}")
+        */
+
+        val prefsReloaded : UserPrefApps = mapper.readValue(prefString)
+        Log.d("TAG",prefsReloaded.clock.packageName)
     }
 
 
@@ -188,6 +210,7 @@ companion object{
         builder.show()
 
     }
+
 
     //Search to set defaults if none exist
     private fun setDefaultProviders(){
@@ -323,12 +346,13 @@ companion object{
 
                 //text.text=userProfile.getField("BirthDay")
                 //placeholder for testing state changes
+                /*
                 if(currentActivity == "Still"){
                     guiHelper.updateUserState("default")
                 }
                 else if(currentActivity!="Still") {
                     guiHelper.updateUserState("atWork")
-                }
+                }*/
                 //Log.d("PrefClock: ",prefs.clock.className)
                 //Log.d("PrefMusic: ",prefs.music.className)
                 //guiHelper.refresh()

@@ -1,8 +1,12 @@
 package com.example.capaproject
 
 import android.content.ComponentName
+import java.io.Serializable
 
-class UserPrefApps {
+
+
+
+class UserPrefApps{
     private val emptyCN = ComponentName("","")
     var clock = ComponentName("","")
     var music = ComponentName("","")

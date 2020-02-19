@@ -469,7 +469,6 @@ companion object{
         }catch (e: Exception){
             if(schoolDialog && userProfile.getField("School")!="None") {
                 schoolDialog = false
-                addressDialog("School")
             }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
@@ -480,7 +479,6 @@ companion object{
         }catch (e: Exception){
             if(workDialog && userProfile.getField("Work")!="None") {
                 workDialog = false
-                addressDialog("Work")
             }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
@@ -491,7 +489,6 @@ companion object{
         }catch (e: Exception){
             if(homeDialog && userProfile.getField("Home")!="None") {
                 homeDialog = false
-                addressDialog("Home")
             }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
@@ -512,17 +509,6 @@ companion object{
             }
         }
 
-    }
-
-    private fun addressDialog(type: String){
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Problem with $type address, please see User Survey to correct.")
-        builder.setMessage("Enter \"None\" into the field to ignore this message in the future.")
-        builder.setPositiveButton("OK"){ dialog, _ ->
-            dialog.cancel()
-        }
-        builder.create()
-        builder.show()
     }
 
     //translating lat and long from a string address

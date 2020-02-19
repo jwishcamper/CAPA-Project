@@ -1,6 +1,9 @@
 package com.example.capaproject
 
 import android.content.Context
+import android.location.Address
+import android.location.Geocoder
+import android.location.Location
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.util.Log
@@ -12,6 +15,8 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import android.widget.ArrayAdapter
 import androidx.core.view.ViewCompat
+import java.io.IOException
+import java.lang.Exception
 
 lateinit var prof: UserProfile
 lateinit var db: DatabaseHandler
@@ -119,6 +124,7 @@ class Survey() : AppCompatActivity() {
         val homeAddr: EditText = findViewById(R.id.home)
         val workAddr: EditText = findViewById(R.id.work)
         val schoolAddr: EditText = findViewById(R.id.school)
+
         val genderSpin: Spinner = findViewById(R.id.gender)
         val monthSpin: Spinner = findViewById(R.id.month)
         val daySpin: Spinner = findViewById(R.id.date)
@@ -131,6 +137,34 @@ class Survey() : AppCompatActivity() {
         val month = monthSpin.selectedItem.toString()
         val day = daySpin.selectedItem.toString()
         val yr = yearSpin.selectedItem.toString()
+
+        //checking if home address exists
+        try {
+            var tries = getLocationFromAddress(this, home)
+        }
+        catch (e: Exception){
+            Toast.makeText(applicationContext,"Home Address Does Not Exist",Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        //checking if work address exists
+        try {
+            var tries = getLocationFromAddress(this, work)
+        }
+        catch (e: Exception){
+            Toast.makeText(applicationContext,"Work Address Does Not Exist",Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        //checking if school address exists
+        try {
+            var tries = getLocationFromAddress(this, school)
+        }
+        catch (e: Exception){
+            Toast.makeText(applicationContext,"School Address Does Not Exist",Toast.LENGTH_SHORT).show()
+            return
+        }
+
 /*
         val map = HashMap<String, String>()
         map["Home"] = home
@@ -148,6 +182,33 @@ class Survey() : AppCompatActivity() {
 
 
         finish()
+    }
+
+    //translating lat and long from a string address
+    fun getLocationFromAddress(context: Context, strAddress: String): Location? {
+
+        val coder = Geocoder(context)
+        val address: List<Address>?
+        var p1: Location? = null
+
+        try {
+            // May throw an IOException
+            address = coder.getFromLocationName(strAddress, 5)
+            if (address == null) {
+                return null
+            }
+
+            val location = address[0]
+            p1 = Location("service Provider")
+            p1.latitude = location.latitude
+            p1.longitude = location.longitude
+
+        } catch (ex: IOException) {
+
+            ex.printStackTrace()
+        }
+
+        return p1
     }
 
 }

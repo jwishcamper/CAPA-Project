@@ -16,6 +16,7 @@ import java.util.*
 class stateChange(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
 
     var location = "None"
+    var driving = false
 
     private var mApiClient: GoogleApiClient = GoogleApiClient.Builder(context)
         .addApi(ActivityRecognition.API)
@@ -83,8 +84,30 @@ class stateChange(private val context : Context) : GoogleApiClient.ConnectionCal
 
 
     fun getContext() : String{
-        return if(location=="None") "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
-        else "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Location: $location"
+        //return if(location=="None" && MainActivity.currentActivity == "In a vehicle") "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
+        //else "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Location: $location"
         //return "${getDate()}     Activity: ${MainActivity.currentActivity}"
+
+        //if driving
+        if(MainActivity.currentActivity == "In a vehicle"){
+            driving = true
+            return "Driving"
+        }
+        else if(MainActivity.currentActivity == "Walking" || MainActivity.currentActivity == "On foot"){
+            driving = false
+        }
+
+        if(driving){
+            return "Driving"
+        }
+
+        return when{
+            //at work, school, home
+            location!="None" && MainActivity.currentActivity != "In a vehicle" ->{
+                "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: $location"
+            }
+            else -> "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
+        }
+
     }
 }

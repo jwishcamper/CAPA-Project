@@ -90,11 +90,11 @@ class stateManager(private val context : Context) : GoogleApiClient.ConnectionCa
     fun getContext() : String{
 
         //if driving
-        if(MainActivity.currentActivity == "In a vehicle"){
+        if(MainActivity.currentActivity == "In Vehicle"){
             driving = true
             return "Driving"
         }
-        else if(MainActivity.currentActivity == "Walking" || MainActivity.currentActivity == "On foot"){
+        else if(MainActivity.currentActivity == "Walking" || MainActivity.currentActivity == "On Foot"){
             driving = false
         }
 
@@ -104,7 +104,7 @@ class stateManager(private val context : Context) : GoogleApiClient.ConnectionCa
 
         return when{
             //at work, school, home
-            location!="None" && MainActivity.currentActivity != "In a vehicle" ->{
+            location!="None" && MainActivity.currentActivity != "In Vehicle" ->{
                 "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: $location"
             }
             else -> "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"

@@ -1,8 +1,9 @@
 package com.example.capaproject
 
-import android.content.ComponentName
+import android.appwidget.AppWidgetProviderInfo
+
 
 interface CAPAhandler {
     fun updateGUI()
-    fun updateGUI(map : HashMap<ComponentName,Double>)
+    fun updateGUI(map : HashMap<AppWidgetProviderInfo?,Double>)
 }

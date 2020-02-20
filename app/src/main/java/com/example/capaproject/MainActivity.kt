@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var guiHelper : CAPAstate
 
     private lateinit var prefs : UserPrefApps
-    private var cnToChange = ComponentName("","")
+    private var awpiToChange : AppWidgetProviderInfo? = null
 
     private lateinit var databaseHandler : DatabaseHandler
 
@@ -100,6 +100,7 @@ class MainActivity : AppCompatActivity() {
     //currentActivity is current most probable activity
 companion object{
     var currentActivity : String = "None"
+    var currentState : String = "None"
 }
     //private val databaseHandler = DatabaseHandler(this)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,7 +110,10 @@ companion object{
 
 
         mainlayout = findViewById(R.id.mainLayout)
-
+        val dummyLocation = Location("")
+        dummyLocation.latitude = 0.0
+        dummyLocation.longitude = 0.0
+        mLastLocation = dummyLocation
         //database variables
         databaseHandler = DatabaseHandler(this)
 
@@ -117,7 +121,7 @@ companion object{
             //text.text=userProfile.getField("BirthDay")
 
         //NUKE THE DATABASE!!!!!
-        //databaseHandler.deleteInfo()
+        //databaseHandler.deleteData()
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
@@ -127,23 +131,24 @@ companion object{
         //screenHeight = getScreenHeight()
 
         prefs = UserPrefApps()
+
+        /*
+        val mapper = jacksonObjectMapper()
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
+
+        val jsonString = mapper.writeValueAsString(prefs)
+        Log.d("jsonString:",jsonString)
+        val newPrefs : UserPrefApps= mapper.readValue(jsonString)
+        Log.d("TEST","Object created i guess")
+*/
         //Load preferences from database here
         prefs = databaseHandler.getUserPrefs()
 
         //If user has never set prefs, ask for default widgets
-        if(prefs.isEmpty())
-            setDefaultProviders()
+        //if(prefs.isEmpty())
+            //setDefaultProviders()
 
-        /*
-
-        Log.d("prefs:",prefs.clock.className)
-        Log.d("prefs:",prefs.music.className)
-        Log.d("prefs:",prefs.search.className)
-        Log.d("prefs:",prefs.email.className)
-        Log.d("prefs:",prefs.calendar.className)
-        Log.d("prefs:",prefs.notes.className)
-        Log.d("prefs:",prefs.weather.className)
-*/
 
         //starts location updates
         mLocationRequest = LocationRequest()
@@ -156,30 +161,12 @@ companion object{
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
-        guiHelper.updateUserState("atWork")
+
         updateContext()
 
+        guiHelper.updateUserState(resources.getString(R.string.stateWork))
+        currentState = resources.getString(R.string.stateWork)
 
-
-
-
-
-
-        val mapper = jacksonObjectMapper()
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
-
-        val prefString = mapper.writeValueAsString(prefs)
-
-        /*
-        val jsonString = mapper.writeValueAsString(infos[0])
-        Log.d("TAG",jsonString)
-        val prefsReloaded : AppWidgetProviderInfo = mapper.readValue(jsonString)
-        Log.d("TAG","pkg: ${prefsReloaded.provider.packageName}, cls: ${prefsReloaded.provider.className}, shortclass: ${prefsReloaded.provider.shortClassName}")
-        */
-
-        val prefsReloaded : UserPrefApps = mapper.readValue(prefString)
-        Log.d("TAG",prefsReloaded.clock.packageName)
     }
 
 
@@ -252,70 +239,49 @@ companion object{
             for(element in clockArray) {
                 if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
                     //we found one
-                    prefs.clock = ComponentName(
-                        info.provider.packageName,
-                        info.provider.className
-                    )
+                    prefs.clock = info
                     break
                 }
             }
             for(element in musicArray){
                 if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
                     //we found one
-                    prefs.music = ComponentName(
-                        info.provider.packageName,
-                        info.provider.className
-                    )
+                    prefs.music = info
                     break
                 }
             }
             for(element in searchArray){
                 if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
                     //we found one
-                    prefs.search = ComponentName(
-                        info.provider.packageName,
-                        info.provider.className
-                    )
+                    prefs.search = info
                     break
                 }
             }
             for(element in emailArray){
                 if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
                     //we found one
-                    prefs.email = ComponentName(
-                        info.provider.packageName,
-                        info.provider.className
-                    )
+                    prefs.email = info
                     break
                 }
             }
             for(element in calendarArray){
                 if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
                     //we found one
-                    prefs.calendar = ComponentName(
-                        info.provider.packageName,
-                        info.provider.className
-                    )
+                    prefs.calendar = info
                     break
                 }
             }
             for(element in notesArray){
                 if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
                     //we found one
-                    prefs.notes = ComponentName(
-                        info.provider.packageName,
-                        info.provider.className
-                    )
+                    prefs.notes = info
                     break
                 }
             }
             for(element in weatherArray){
                 if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
                     //we found one
-                    prefs.weather = ComponentName(
-                        info.provider.packageName,
-                        info.provider.className
-                    )
+                    prefs.weather = info
                     break
                 }
             }
@@ -327,12 +293,13 @@ companion object{
     }
 
     //Build the GUI given a hashmap. Called from CAPAstate.setState
-    fun buildGUI(frags : HashMap<ComponentName, Double>){
+    fun buildGUI(frags : HashMap<AppWidgetProviderInfo?, Double>){
         removeAllWidgets()
         val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
         for (entry in sorted) {
             //Log.d("Trying to build: ",entry.key.className)
-            createDefaultWidget(entry.key)
+            if(entry.key != null)
+                createDefaultWidget(entry.key)
             //createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
         }
     }
@@ -342,20 +309,31 @@ companion object{
     private fun updateContext(){
         fixedRateTimer("timer",false,0,1000){
             this@MainActivity.runOnUiThread {
-                text.text = stateHelper.getContext()
+                text.text = stateHelper.getString()
 
-                //text.text=userProfile.getField("BirthDay")
-                //placeholder for testing state changes
-                /*
-                if(currentActivity == "Still"){
-                    guiHelper.updateUserState("default")
+                //If context has changed, updateuserstate
+                if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
+                    guiHelper.updateUserState(resources.getString(R.string.stateDriving))
+                    currentState = resources.getString(R.string.stateDriving)
                 }
-                else if(currentActivity!="Still") {
-                    guiHelper.updateUserState("atWork")
-                }*/
-                //Log.d("PrefClock: ",prefs.clock.className)
-                //Log.d("PrefMusic: ",prefs.music.className)
-                //guiHelper.refresh()
+                else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
+                    guiHelper.updateUserState(resources.getString(R.string.stateSchool))
+                    currentState = resources.getString(R.string.stateSchool)
+                }
+                else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
+                    guiHelper.updateUserState(resources.getString(R.string.stateWork))
+                    currentState = resources.getString(R.string.stateWork)
+                }
+                else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
+                    guiHelper.updateUserState(resources.getString(R.string.stateHome))
+                    currentState = resources.getString(R.string.stateHome)
+                }
+                else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
+                    guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+                    currentState = resources.getString(R.string.stateDefault)
+                }
+
+
             }
         }
     }
@@ -370,26 +348,17 @@ companion object{
             childCount--
         }
     }
-    private fun createDefaultWidget(cn : ComponentName) {
+    private fun createDefaultWidget(awpi : AppWidgetProviderInfo?) {
 
-        var appWidgetInfo: AppWidgetProviderInfo? = null
-
-        for (info in infos) {
-            if (info.provider.className == cn.className && info.provider.packageName == cn.packageName) {
-                //we found it
-                appWidgetInfo = info
-                break
-            }
-        }
         val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
         val hostView = mAppWidgetHost.createView(
             this.applicationContext,
-            appWidgetId, appWidgetInfo
+            appWidgetId, awpi
         )
-        hostView.setAppWidget(appWidgetId, appWidgetInfo)
+        hostView.setAppWidget(appWidgetId, awpi)
         hostView.setOnLongClickListener {
             Log.d("TAG", "long click createWidget")
-            guiHelper.removeWidget(cn)
+            guiHelper.removeWidget(awpi)
 //            removeWidget(hostView)
             true
         }
@@ -413,50 +382,50 @@ companion object{
                 REQUEST_CREATE_APPWIDGET -> createWidget(data!!)
                 REQUEST_APPWIDGET_MUSIC -> {
                     prefs.music = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(cnToChange)) {
-                        guiHelper.stateMap.remove(cnToChange)
+                    if(guiHelper.stateMap.contains(awpiToChange)) {
+                        guiHelper.stateMap.remove(awpiToChange)
                         guiHelper.addWidget(prefs.music)
                     }
                 }
                 REQUEST_APPWIDGET_CLOCK -> {
                     prefs.clock = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(cnToChange)) {
-                        guiHelper.stateMap.remove(cnToChange)
+                    if(guiHelper.stateMap.contains(awpiToChange)) {
+                        guiHelper.stateMap.remove(awpiToChange)
                         guiHelper.addWidget(prefs.clock)
                     }
                 }
                 REQUEST_APPWIDGET_SEARCH -> {
                     prefs.search = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(cnToChange)) {
-                        guiHelper.stateMap.remove(cnToChange)
+                    if(guiHelper.stateMap.contains(awpiToChange)) {
+                        guiHelper.stateMap.remove(awpiToChange)
                         guiHelper.addWidget(prefs.search)
                     }
                 }
                 REQUEST_APPWIDGET_EMAIL -> {
                     prefs.email = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(cnToChange)) {
-                        guiHelper.stateMap.remove(cnToChange)
+                    if(guiHelper.stateMap.contains(awpiToChange)) {
+                        guiHelper.stateMap.remove(awpiToChange)
                         guiHelper.addWidget(prefs.email)
                     }
                 }
                 REQUEST_APPWIDGET_CALENDAR -> {
                     prefs.calendar = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(cnToChange)) {
-                        guiHelper.stateMap.remove(cnToChange)
+                    if(guiHelper.stateMap.contains(awpiToChange)) {
+                        guiHelper.stateMap.remove(awpiToChange)
                         guiHelper.addWidget(prefs.calendar)
                     }
                 }
                 REQUEST_APPWIDGET_NOTES -> {
                     prefs.notes = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(cnToChange)) {
-                        guiHelper.stateMap.remove(cnToChange)
+                    if(guiHelper.stateMap.contains(awpiToChange)) {
+                        guiHelper.stateMap.remove(awpiToChange)
                         guiHelper.addWidget(prefs.notes)
                     }
                 }
                 REQUEST_APPWIDGET_WEATHER -> {
                     prefs.weather = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(cnToChange)) {
-                        guiHelper.stateMap.remove(cnToChange)
+                    if(guiHelper.stateMap.contains(awpiToChange)) {
+                        guiHelper.stateMap.remove(awpiToChange)
                         guiHelper.addWidget(prefs.weather)
                     }
                 }
@@ -470,14 +439,10 @@ companion object{
             }
         }
     }
-    private fun widgetPrefHelper(data: Intent) : ComponentName{
+    private fun widgetPrefHelper(data: Intent) : AppWidgetProviderInfo{
         val extras = data.extras
         val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-        val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
-        return ComponentName(
-            appWidgetInfo.provider.packageName,
-            appWidgetInfo.provider.className
-        )
+        return mAppWidgetManager.getAppWidgetInfo(appWidgetId)
     }
     private fun configureWidget(data: Intent) {
         val extras = data.extras
@@ -502,13 +467,7 @@ companion object{
             appWidgetId, appWidgetInfo
         )
 
-
-
-        val cn = ComponentName(
-            appWidgetInfo.provider.packageName,
-            appWidgetInfo.provider.className
-        )
-        guiHelper.addWidget(cn)
+        guiHelper.addWidget(appWidgetInfo)
         //Log.d("TAG",appWidgetInfo.provider.packageName)
         //Log.d("TAG",appWidgetInfo.provider.className)
 
@@ -591,7 +550,7 @@ companion object{
             builder.setTitle("Select widget to change default:")
                 .setItems(widgetList) { dialog, which ->
                     //remove old widget from stateMap
-                    cnToChange = prefs.getAttr(widgetList[which])
+                    awpiToChange = prefs.getAttr(widgetList[which])
                     helperQueryUserPrefWidget(widgetList[which])
                     dialog.dismiss()
                 }
@@ -670,13 +629,13 @@ companion object{
 
         when {
             sDistance < 400 && sDistance >= 0 -> {
-                stateHelper.location = "School"
+                stateHelper.location = resources.getString(R.string.stateSchool)
             }
             wDistance < 400 && wDistance >= 0 -> {
-                stateHelper.location = "Work"
+                stateHelper.location = resources.getString(R.string.stateWork)
             }
             hDistance < 400 && hDistance >= 0 -> {
-                stateHelper.location = "Home"
+                stateHelper.location = resources.getString(R.string.stateHome)
             }
             else -> {
                 stateHelper.location = "None"

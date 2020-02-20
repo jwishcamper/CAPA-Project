@@ -72,6 +72,12 @@
     <string-array name="Widgets">
         <item>Clock</item>
         <item>Music</item>
+        <item>Search</item>
+        <item>Email</item>
+        <item>Calendar</item>
+        <item>Notes</item>
+        <item>Weather</item>
+
     </string-array>
 
 </resources>

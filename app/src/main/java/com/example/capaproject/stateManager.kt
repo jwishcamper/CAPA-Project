@@ -10,12 +10,13 @@ import com.google.android.gms.location.ActivityRecognition
 import java.text.SimpleDateFormat
 import java.util.*
 
-//goal of stateChange class - use information such as time, day of week,
+//goal of stateManager class - use information such as time, day of week,
 //location, and activity state to guess at the context of the user
 @Suppress("DEPRECATION")
-class stateChange(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
+class stateManager(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
 
     var location = "None"
+    var driving = false
 
     private var mApiClient: GoogleApiClient = GoogleApiClient.Builder(context)
         .addApi(ActivityRecognition.API)
@@ -50,7 +51,7 @@ class stateChange(private val context : Context) : GoogleApiClient.ConnectionCal
 
 
     //returns time as string eg: "9:23 pm"
-    private fun getDateTime() : String {
+    private fun getTime() : String {
         val min = Calendar.getInstance().get(Calendar.MINUTE)
         var hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val minString = if(min < 10){ "0$min"}
@@ -81,10 +82,33 @@ class stateChange(private val context : Context) : GoogleApiClient.ConnectionCal
         return SimpleDateFormat("MM-dd-yyyy", Locale.getDefault()).format(Date())
     }
 
+    fun getDateTime() : String{
+        return "${getDate()}, ${getTime()}"
+    }
+
 
     fun getContext() : String{
-        return if(location=="None") "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
-        else "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Location: $location"
-        //return "${getDate()}     Activity: ${MainActivity.currentActivity}"
+
+        //if driving
+        if(MainActivity.currentActivity == "In Vehicle"){
+            driving = true
+            return "Driving"
+        }
+        else if(MainActivity.currentActivity == "Walking" || MainActivity.currentActivity == "On Foot"){
+            driving = false
+        }
+
+        if(driving){
+            return "Driving"
+        }
+
+        return when{
+            //at work, school, home
+            location!="None" && MainActivity.currentActivity != "In Vehicle" ->{
+                "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: $location"
+            }
+            else -> "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
+        }
+
     }
 }

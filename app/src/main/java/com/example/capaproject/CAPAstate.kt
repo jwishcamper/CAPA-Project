@@ -2,7 +2,7 @@ package com.example.capaproject
 
 import android.content.ComponentName
 
-class CAPAstate(context:MainActivity, val db : DatabaseHandler, val prefs : UserPrefApps) {
+class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<ComponentName, Double> = HashMap()
     //List of possible states stores as CAPAhandler objects
@@ -18,6 +18,7 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler, val prefs : User
     }
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
+
         //save hashmap for current state to database
         db.updateDatabaseState(getState(),stateMap)
 
@@ -25,6 +26,13 @@ class CAPAstate(context:MainActivity, val db : DatabaseHandler, val prefs : User
             in "atWork" -> setState(atWork)
             else -> setState(default)
         }
+
+        //use following line when location turned on:
+        //db.updateUserData(context.stateHelper.getDateTime(),getState(),context.mLastLocation.latitude,context.mLastLocation.longitude)
+
+        //use the following line for use on emulator:
+        db.updateUserData(context.stateHelper.getDateTime(),getState(),0.0,0.0)
+
     }
     //helper for updateUserState
     //if state has changed, build GUI based on hashmap. if hashmap is empty, build based on default.

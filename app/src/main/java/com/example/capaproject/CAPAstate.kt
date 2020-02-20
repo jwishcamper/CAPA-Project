@@ -18,12 +18,7 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
     }
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
-
-        //use following line when location turned on:
-        //db.updateUserData(context.stateHelper.getDateTime(),getState(),context.mLastLocation.latitude,context.mLastLocation.longitude)
-
-        //use the following line for use on emulator:
-        db.updateUserData(context.stateHelper.getDateTime(),getState(),0.0,0.0)
+        var userHistory = UserHistory()
 
         //save hashmap for current state to database
         db.updateDatabaseState(getState(),stateMap)
@@ -32,6 +27,18 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
             in "atWork" -> setState(atWork)
             else -> setState(default)
         }
+
+        //use following line when location turned on:
+        //userHistory.dateTime = context.stateHelper.getDateTime()
+        //userHistory.userState = getState()
+        //userHistory.latitude = context.mLastLocation.latitude
+        //userHistory.longitude = context.mLastLocation.longitude
+        //db.updateUserHistory(userHistory)
+
+        //use the following line for use on emulator:
+        userHistory.dateTime = context.stateHelper.getDateTime()
+        userHistory.userState = getState()
+        db.updateUserHistory(userHistory)
     }
     //helper for updateUserState
     //if state has changed, build GUI based on hashmap. if hashmap is empty, build based on default.
@@ -39,7 +46,7 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
         if(newState != currentState) {
             currentState = newState
             //load the user prefs from database
-            stateMap = db.getStateInfo(getState())!!
+            stateMap = db.getStateData(getState())!!
             if(stateMap.isEmpty())
                 currentState.updateGUI()
             else

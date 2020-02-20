@@ -7,9 +7,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.collections.HashMap
-import kotlin.concurrent.fixedRateTimer
 import android.app.Activity
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -31,8 +29,6 @@ import java.lang.Exception
 import android.content.res.Resources
 import androidx.appcompat.app.AlertDialog
 import java.util.ArrayList
-import kotlin.reflect.*
-
 
 
 //currently unused from fragment logic
@@ -119,6 +115,9 @@ companion object{
         //NUKE THE DATABASE!!!!!
         //databaseHandler.deleteInfo()
 
+        //NUKE USER HISTORY TABLE!!!!!
+        databaseHandler.clearUserHistory()
+
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
@@ -158,7 +157,7 @@ companion object{
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
         guiHelper.updateUserState("atWork")
-        updateContext()
+        //updateContext()
     }
 
 
@@ -317,7 +316,7 @@ companion object{
 
     //updates textbox context every 1000 milliseconds
     //placeholder function to be used for testing
-    private fun updateContext(){
+    /*private fun updateContext(){
         fixedRateTimer("timer",false,0,1000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getContext()
@@ -335,7 +334,7 @@ companion object{
                 //guiHelper.refresh()
             }
         }
-    }
+    }*/
 
     private fun removeAllWidgets() {
         var childCount = mainlayout.childCount

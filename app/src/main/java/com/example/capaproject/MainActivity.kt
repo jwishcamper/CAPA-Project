@@ -34,6 +34,9 @@ import android.content.res.Resources
 import androidx.appcompat.app.AlertDialog
 import java.util.ArrayList
 
+import com.jmedeisis.draglinearlayout.DragLinearLayout;
+
+
 //currently unused from fragment logic
 /*
 //space between fragments
@@ -74,7 +77,7 @@ class MainActivity : AppCompatActivity() {
     private val REQUEST_APPWIDGET_MUSIC = 7
     lateinit var infos : List<AppWidgetProviderInfo>
 
-    private lateinit var mainlayout: ViewGroup
+    private lateinit var mainlayout: DragLinearLayout
 
     //helper object to determine user state
     private lateinit var stateHelper: stateChange
@@ -100,12 +103,11 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        /*
+
         val testComp = ComponentName(
             "com.google.android.googlequicksearchbox",
             "com.google.android.googlequicksearchbox.SearchWidgetProvider"
         )
-*/
 
 
         mainlayout = findViewById(R.id.mainLayout)
@@ -124,6 +126,7 @@ companion object{
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
+        createDefaultWidget(testComp)
 
         //screenHeight = getScreenHeight()
 
@@ -248,18 +251,23 @@ companion object{
             }
         }
         val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
+        Log.d("createDefaultWidget id", appWidgetId.toString())
         val hostView = mAppWidgetHost.createView(
             this.applicationContext,
             appWidgetId, appWidgetInfo
         )
+
+
         hostView.setAppWidget(appWidgetId, appWidgetInfo)
-        hostView.setOnLongClickListener {
-            Log.d("TAG", "long click createWidget")
-            guiHelper.removeWidget(cn)
-//            removeWidget(hostView)
-            true
-        }
-        mainlayout.addView(hostView)
+//        hostView.setOnLongClickListener {
+//            Log.d("TAG", "long click createWidget")
+//            guiHelper.removeWidget(cn)
+////            removeWidget(hostView)
+//            true
+//        }
+        mainlayout.addDragView(hostView, hostView)
+//        mainlayout.setViewDraggable(hostView, hostView)
+
     }
 
     //logic to add a new widget to current state using floating action button
@@ -334,8 +342,9 @@ companion object{
     private fun createWidget(data: Intent) {
         val extras = data.extras
         val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+        Log.d("createWidget id", appWidgetId.toString())
         val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
-
+        
         val hostView = mAppWidgetHost.createView(
             this.applicationContext,
             appWidgetId, appWidgetInfo
@@ -358,7 +367,7 @@ companion object{
 //            guiHelper.removeWidget(cn)
 //            true
 //        }
-//        mainlayout.addView(hostView)
+        mainlayout.addDragView(hostView, hostView, 1)
 //
 //        currentWidgetList.add(appWidgetInfo)
     }
@@ -515,13 +524,14 @@ companion object{
     }
 
     private fun addressDialog(type: String){
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Problem with $type address, please see User Survey to correct.")
-        builder.setPositiveButton("OK"){ dialog, _ ->
-            dialog.cancel()
-        }
-        builder.create()
-        builder.show()
+//        val builder = AlertDialog.Builder(this)
+//        builder.setTitle("Problem with $type address, please see User Survey to correct.")
+//        builder.setPositiveButton("OK"){ dialog, _ ->
+//            dialog.cancel()
+//        }
+//        builder.create()
+//        builder.show()
+        Toast.makeText(this@MainActivity, "Problem with $type address, please see User Survey to correct.", Toast.LENGTH_SHORT).show()
     }
 
     //translating lat and long from a string address

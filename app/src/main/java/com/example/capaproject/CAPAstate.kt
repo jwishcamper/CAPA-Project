@@ -18,7 +18,9 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
     }
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
+
         var userHistory = UserHistory()
+
 
         //save hashmap for current state to database
         db.updateDatabaseState(getState(),stateMap)
@@ -29,6 +31,7 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
         }
 
         //use following line when location turned on:
+
         //userHistory.dateTime = context.stateHelper.getDateTime()
         //userHistory.userState = getState()
         //userHistory.latitude = context.mLastLocation.latitude

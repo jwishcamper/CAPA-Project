@@ -24,11 +24,14 @@ import android.os.Build
 import android.os.Looper
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
-import java.io.IOException
 import java.lang.Exception
 import android.content.res.Resources
 import androidx.appcompat.app.AlertDialog
+import com.fasterxml.jackson.databind.DeserializationFeature
+import java.io.*
 import java.util.ArrayList
+import com.fasterxml.jackson.module.kotlin.*
+
 
 
 //currently unused from fragment logic
@@ -157,7 +160,30 @@ companion object{
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
         guiHelper.updateUserState("atWork")
-        //updateContext()
+
+        updateContext()
+
+
+
+
+
+
+
+        val mapper = jacksonObjectMapper()
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
+
+        val prefString = mapper.writeValueAsString(prefs)
+
+        /*
+        val jsonString = mapper.writeValueAsString(infos[0])
+        Log.d("TAG",jsonString)
+        val prefsReloaded : AppWidgetProviderInfo = mapper.readValue(jsonString)
+        Log.d("TAG","pkg: ${prefsReloaded.provider.packageName}, cls: ${prefsReloaded.provider.className}, shortclass: ${prefsReloaded.provider.shortClassName}")
+        */
+
+        val prefsReloaded : UserPrefApps = mapper.readValue(prefString)
+        Log.d("TAG",prefsReloaded.clock.packageName)
     }
 
 
@@ -188,6 +214,7 @@ companion object{
         builder.show()
 
     }
+
 
     //Search to set defaults if none exist
     private fun setDefaultProviders(){
@@ -323,12 +350,13 @@ companion object{
 
                 //text.text=userProfile.getField("BirthDay")
                 //placeholder for testing state changes
+                /*
                 if(currentActivity == "Still"){
                     guiHelper.updateUserState("default")
                 }
                 else if(currentActivity!="Still") {
                     guiHelper.updateUserState("atWork")
-                }
+                }*/
                 //Log.d("PrefClock: ",prefs.clock.className)
                 //Log.d("PrefMusic: ",prefs.music.className)
                 //guiHelper.refresh()
@@ -619,7 +647,6 @@ companion object{
         }catch (e: Exception){
             if(schoolDialog && userProfile.getField("School")!="None") {
                 schoolDialog = false
-                addressDialog("School")
             }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
@@ -630,7 +657,6 @@ companion object{
         }catch (e: Exception){
             if(workDialog && userProfile.getField("Work")!="None") {
                 workDialog = false
-                addressDialog("Work")
             }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
@@ -641,7 +667,6 @@ companion object{
         }catch (e: Exception){
             if(homeDialog && userProfile.getField("Home")!="None") {
                 homeDialog = false
-                addressDialog("Home")
             }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
@@ -662,19 +687,6 @@ companion object{
             }
         }
 
-    }
-
-    private fun addressDialog(type: String){
-        /*
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Problem with $type address, please see User Survey to correct.")
-        builder.setMessage("Enter \"None\" into the field to ignore this message in the future.")
-        builder.setPositiveButton("OK"){ dialog, _ ->
-            dialog.cancel()
-        }
-        builder.create()
-        builder.show()
-        */
     }
 
     //translating lat and long from a string address

@@ -161,7 +161,7 @@ companion object{
         guiHelper = CAPAstate(this, databaseHandler, prefs)
         guiHelper.updateUserState("atWork")
 
-        updateContext()
+        //updateContext()
 
 
 

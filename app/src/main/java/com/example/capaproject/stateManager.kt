@@ -85,29 +85,30 @@ class stateManager(private val context : Context) : GoogleApiClient.ConnectionCa
     fun getDateTime() : String{
         return "${getDate()}, ${getTime()}"
     }
-
-
+    fun getString() : String {
+        return "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: ${getContext()}"
+    }
     fun getContext() : String{
 
         //if driving
         if(MainActivity.currentActivity == "In Vehicle"){
             driving = true
-            return "Driving"
+            return context.resources.getString(R.string.stateDriving)
         }
         else if(MainActivity.currentActivity == "Walking" || MainActivity.currentActivity == "On Foot"){
             driving = false
         }
 
         if(driving){
-            return "Driving"
+            return context.resources.getString(R.string.stateDriving)
         }
 
         return when{
             //at work, school, home
             location!="None" && MainActivity.currentActivity != "In Vehicle" ->{
-                "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: $location"
+                location
             }
-            else -> "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}"
+            else -> context.resources.getString(R.string.stateDefault)
         }
 
     }

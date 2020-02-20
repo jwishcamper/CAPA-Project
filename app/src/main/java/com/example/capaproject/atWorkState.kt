@@ -1,21 +1,22 @@
 package com.example.capaproject
 
-import android.content.ComponentName
+import android.appwidget.AppWidgetProviderInfo
 
-class atWorkState(val newCstate: CAPAstate,val context: MainActivity, val prefs : UserPrefApps) : CAPAhandler{
+class atWorkState(val newCstate: CAPAstate,val context: MainActivity,private val prefs : UserPrefApps) : CAPAhandler{
     var capastate : CAPAstate = newCstate
 
     override fun updateGUI() {
         //make a hash map for default workState, then build GUI
-        val hashMap : HashMap<ComponentName, Double> = HashMap()
+        val hashMap : HashMap<AppWidgetProviderInfo?, Double> = HashMap()
 
+        //Store "default" for each state here. In this case, we want clock and music.
         hashMap[prefs.clock] = 1.0
         hashMap[prefs.music] = 0.0
 
         newCstate.stateMap = hashMap
         context.buildGUI(hashMap)
     }
-    override fun updateGUI(map : HashMap<ComponentName,Double>){
+    override fun updateGUI(map : HashMap<AppWidgetProviderInfo?,Double>){
         context.buildGUI(map)
     }
 }

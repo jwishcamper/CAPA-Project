@@ -116,7 +116,12 @@ private const val SCHOOL_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${SchoolEntry.TA
 private const val USER_PREFS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPrefsEntry.TABLE_NAME}"
 private const val USER_HISTORY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserHistoryEntry.TABLE_NAME}"
 
-class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+    init{
+        mapper = jacksonObjectMapper()
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
+    }
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(SURVEY_CREATE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
@@ -242,7 +247,7 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         val jsonString = mapper.writeValueAsString(prefs)
 
         val values = ContentValues().apply {
-            put(UserPrefsEntry.TABLE_NAME, jsonString)
+            put(UserPrefsEntry.COLUMN_WIDGET, jsonString)
         }
         db.insert(UserPrefsEntry.TABLE_NAME, null, values)
 
@@ -328,8 +333,8 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     //Updates state info in corresponding table using passed string to check which state
     fun updateDatabaseState(stateName: String, map: HashMap<AppWidgetProviderInfo?, Double>){
         when(stateName){
-            "atWork" -> updateWorkData(map)
-            "default" -> updateDefaultData(map)
+            context.resources.getString(R.string.stateWork) -> updateWorkData(map)
+            context.resources.getString(R.string.stateDefault) -> updateDefaultData(map)
         }
     }
 
@@ -361,19 +366,20 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     //Uses passed string to get info from corresponding state table
-    fun getStateData(stateName: String): HashMap<AppWidgetProviderInfo, Double>? {
+    fun getStateData(stateName: String): HashMap<AppWidgetProviderInfo?, Double>? {
         return when (stateName) {
-            "atWork" -> getWorkData()
-            "default" -> getDefaultData()
+            context.resources.getString(R.string.stateWork) -> getWorkData()
+            context.resources.getString(R.string.stateDefault) -> getDefaultData()
             else -> return null
         }
     }
 
-    private fun getDefaultData(): HashMap<AppWidgetProviderInfo, Double> {
+    private fun getDefaultData(): HashMap<AppWidgetProviderInfo?, Double> {
         val db = this.readableDatabase
         db.execSQL(DEFAULT_CREATE_ENTRIES)
 
-        val map: HashMap<AppWidgetProviderInfo, Double> = HashMap()
+        val map: HashMap<AppWidgetProviderInfo?, Double> = HashMap()
+
         val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor!!.moveToFirst()
@@ -390,11 +396,12 @@ class DatabaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
     }
 
     //Gets work state info from database and returns as HashMap
-    private fun getWorkData(): HashMap<AppWidgetProviderInfo, Double> {
+    private fun getWorkData(): HashMap<AppWidgetProviderInfo?, Double> {
         val db = this.readableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
 
-        val map: HashMap<AppWidgetProviderInfo, Double> = HashMap()
+        val map: HashMap<AppWidgetProviderInfo?, Double> = HashMap()
+
         val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor!!.moveToFirst()

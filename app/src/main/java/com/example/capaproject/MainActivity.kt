@@ -101,7 +101,7 @@ companion object{
         userProfile = databaseHandler.getSurvey()
 
         //NUKE THE DATABASE!!!!!
-        //databaseHandler.deleteData()
+        databaseHandler.deleteData()
 
         //NUKE USER HISTORY TABLE!!!!!
         databaseHandler.clearUserHistory()
@@ -154,8 +154,7 @@ companion object{
         val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
         for (entry in sorted) {
             //Log.d("Trying to build: ",entry.key.className)
-            if(entry.key != null)
-                createDefaultWidget(entry.key)
+            createDefaultWidget(entry.key)
             //createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
         }
     }

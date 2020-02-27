@@ -279,20 +279,16 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.execSQL(WORK_CREATE_ENTRIES)
 
         for(entry in map){
-            if(entry.key != null){
-                //var selection = entry.key!!.awpi!!.provider.packageName
-                //selection = selection.replace(".", "")
-                //Log.d("pkg", selection)
-                val mapperString = mapper.writeValueAsString(entry.key)
-                val weight = entry.value
-
-                val values = ContentValues().apply{
-                    put(WorkEntry.COLUMN_WIDGETINFO, mapperString)
-                    put(WorkEntry.COLUMN_WEIGHT, weight)
-                }
-
-                db.insert(WorkEntry.TABLE_NAME, null, values)
+            //var selection = entry.key!!.awpi!!.provider.packageName
+            //selection = selection.replace(".", "")
+            //Log.d("pkg", selection)
+            val mapperString = mapper.writeValueAsString(entry.key)
+            val weight = entry.value
+            val values = ContentValues().apply{
+                put(WorkEntry.COLUMN_WIDGETINFO, mapperString)
+                put(WorkEntry.COLUMN_WEIGHT, weight)
             }
+            db.insert(WorkEntry.TABLE_NAME, null, values)
         }
         db.close()
     }
@@ -303,16 +299,14 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.execSQL(DEFAULT_CREATE_ENTRIES)
 
         for(entry in map){
-            if(entry.key != null){
-                val mapperString = mapper.writeValueAsString(entry.key)
-                val weight = entry.value
+            val mapperString = mapper.writeValueAsString(entry.key)
+            val weight = entry.value
 
-                val values = ContentValues().apply{
-                    put(DefaultEntry.COLUMN_WIDGETINFO, mapperString)
-                    put(DefaultEntry.COLUMN_WEIGHT, weight)
-                }
-                db.insert(DefaultEntry.TABLE_NAME, null, values)
+            val values = ContentValues().apply{
+                put(DefaultEntry.COLUMN_WIDGETINFO, mapperString)
+                put(DefaultEntry.COLUMN_WEIGHT, weight)
             }
+            db.insert(DefaultEntry.TABLE_NAME, null, values)
         }
         db.close()
     }
@@ -356,7 +350,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
         return when (stateName) {
             context.resources.getString(R.string.stateWork) -> getWorkData()
-            //context.resources.getString(R.string.stateDefault) -> getDefaultData()
             else -> getDefaultData()
         }
     }
@@ -401,6 +394,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         }
         cursor.close()
         db.close()
+
         return map
     }
 
@@ -463,8 +457,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         val selectQuery = "SELECT * FROM ${UserHistoryEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor.moveToLast()
-        Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_DATE_TIME)))
-        Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
         //cursor.moveToFirst()
         /*while(!cursor.isAfterLast){
             if(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)) == stateName){

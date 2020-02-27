@@ -31,7 +31,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import java.io.*
 import java.util.ArrayList
 import com.fasterxml.jackson.module.kotlin.*
-
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlin.concurrent.fixedRateTimer
 
 
 //currently unused from fragment logic
@@ -165,13 +166,11 @@ companion object{
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
 
+        //guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+        //currentState = resources.getString(R.string.stateDefault)
+
         updateContext()
-
-        guiHelper.updateUserState(resources.getString(R.string.stateWork))
-        currentState = resources.getString(R.string.stateWork)
-
     }
-
 
     //for changing individual default widgets
     private fun helperQueryUserPrefWidget(widgetType : String){
@@ -190,7 +189,6 @@ companion object{
                 "Calendar" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CALENDAR)
                 "Notes" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_NOTES)
                 "Weather" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_WEATHER)
-
             }
         }
         builder.setNegativeButton("Cancel") { dialog, _ ->
@@ -200,7 +198,6 @@ companion object{
         builder.show()
 
     }
-
 
     //Search to set defaults if none exist
     private fun setDefaultProviders(){
@@ -289,10 +286,6 @@ companion object{
                 }
             }
         }
-
-
-
-
     }
 
     //Build the GUI given a hashmap. Called from CAPAstate.setState
@@ -309,8 +302,8 @@ companion object{
 
     //updates textbox context every 1000 milliseconds
     //placeholder function to be used for testing
-    /*private fun updateContext(){
-        fixedRateTimer("timer",false,0,1000){
+    private fun updateContext(){
+        fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString()
 
@@ -336,10 +329,9 @@ companion object{
                     currentState = resources.getString(R.string.stateDefault)
                 }
 
-
             }
         }
-    }*/
+    }
 
     private fun removeAllWidgets() {
         var childCount = mainlayout.childCount
@@ -565,11 +557,11 @@ companion object{
         }
         else if(id == R.id.setWork){
             Toast.makeText(this, "State Changed to Work", Toast.LENGTH_LONG).show()
-            guiHelper.updateUserState("atWork")
+            guiHelper.updateUserState("Work")
         }
         else if(id == R.id.setDefault){
             Toast.makeText(this, "State Changed to Default", Toast.LENGTH_LONG).show()
-            guiHelper.updateUserState("default")
+            guiHelper.updateUserState("Default")
         }
 
         return super.onOptionsItemSelected(item)

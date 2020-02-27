@@ -6,6 +6,7 @@ import android.content.ComponentName
 class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<AppWidgetProviderInfo?, Double> = HashMap()
+    var dummyState : CAPAhandler = defaultState(this,context,prefs)
     //List of possible states stores as CAPAhandler objects
     var atWork : CAPAhandler = atWorkState(this,context,prefs)
     var default : CAPAhandler = defaultState(this,context,prefs)
@@ -15,7 +16,7 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
 
     //set state to default initially
     init {
-        currentState = default
+        currentState = dummyState
     }
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
@@ -24,7 +25,8 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
 
 
         //save hashmap for current state to database
-        db.updateDatabaseState(getState(),stateMap)
+        if(stateMap.isNotEmpty())
+            db.updateDatabaseState(getState(),stateMap)
 
         when(newState){
             in context.resources.getString(R.string.stateWork) -> setState(atWork)
@@ -41,9 +43,9 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
         db.updateUserHistory(uh)
 
         //use the following line for use on emulator:
-        userHistory.dateTime = context.stateHelper.getDateTime()
-        userHistory.userState = getState()
-        db.updateUserHistory(userHistory)
+        //userHistory.dateTime = context.stateHelper.getDateTime()
+        //userHistory.userState = getState()
+        //db.updateUserHistory(userHistory)
     }
     //helper for updateUserState
     //if state has changed, build GUI based on hashmap. if hashmap is empty, build based on default.

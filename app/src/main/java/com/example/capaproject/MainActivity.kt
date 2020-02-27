@@ -3,7 +3,6 @@ package com.example.capaproject
 import android.Manifest
 import android.content.ComponentName
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -28,25 +27,13 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.lang.Exception
 import android.content.res.Resources
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.*
 import java.util.ArrayList
 import com.fasterxml.jackson.module.kotlin.*
-
-
-//currently unused from fragment logic
-/*
-//space between fragments
-const val paddingHeight = 35
-
-//If there is an XML element to be at top of screen, increment this
-const val indexOfTop=1
-
-//used to keep track of created view IDs and fragments
-var viewIDs = mutableListOf<Int>()
-var fragments = mutableListOf<Fragment>()
-*/
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,12 +45,8 @@ class MainActivity : AppCompatActivity() {
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
     lateinit var userProfile : UserProfile
 
-    var schoolDialog = true
-    var workDialog = true
-    var homeDialog = true
-
     //
-    private var currentWidgetList = mutableListOf<AppWidgetProviderInfo>()
+    private var currentWidgetList = mutableListOf<widgetHolder>()
     private lateinit var mAppWidgetManager: AppWidgetManager
     private lateinit var mAppWidgetHost: WidgetHost
     private val APPWIDGET_HOST_ID = 1
@@ -86,18 +69,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var guiHelper : CAPAstate
 
     private lateinit var prefs : UserPrefApps
-    private var awpiToChange : AppWidgetProviderInfo? = null
+    private var awpiToChange : widgetHolder? = null
 
     private lateinit var databaseHandler : DatabaseHandler
 
-    //currently unused from fragment logic
-    /*
-    private var screenHeight : Int = 0
-    private val listOfWidgets : ArrayList<String> = ArrayList(listOf("testingFragment", "alarmDisplay", "mediaPlayer"))
-    private var currentWidgets : ArrayList<String> = ArrayList()
-*/
+    //used for testing serialize objects
+    //private lateinit var mapper : ObjectMapper
+
 
     //currentActivity is current most probable activity
+    //currentState is updated when state changes to ensure that we won't enter the same state twice
 companion object{
     var currentActivity : String = "None"
     var currentState : String = "None"
@@ -106,19 +87,18 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-
-
         mainlayout = findViewById(R.id.mainLayout)
+
+        //make sure mLastLocation is not null
         val dummyLocation = Location("")
         dummyLocation.latitude = 0.0
         dummyLocation.longitude = 0.0
         mLastLocation = dummyLocation
+
         //database variables
         databaseHandler = DatabaseHandler(this)
 
         userProfile = databaseHandler.getSurvey()
-            //text.text=userProfile.getField("BirthDay")
 
         //NUKE THE DATABASE!!!!!
         //databaseHandler.deleteData()
@@ -128,27 +108,23 @@ companion object{
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
-        //screenHeight = getScreenHeight()
-
-        prefs = UserPrefApps()
-
-        /*
-        val mapper = jacksonObjectMapper()
+/*
+        mapper = jacksonObjectMapper()
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
-
-        val jsonString = mapper.writeValueAsString(prefs)
-        Log.d("jsonString:",jsonString)
-        val newPrefs : UserPrefApps= mapper.readValue(jsonString)
-        Log.d("TEST","Object created i guess")
 */
+
+        //Log.d("hostView",hostViewReloaded.awpi.provider.packageName)
+        prefs = UserPrefApps()
+
         //Load preferences from database here
-        prefs = databaseHandler.getUserPrefs()
+            //prefs = databaseHandler.getUserPrefs()
 
         //If user has never set prefs, ask for default widgets
-        //if(prefs.isEmpty())
-            //setDefaultProviders()
-
+        /*
+        if(prefs.isEmpty())
+            setDefaultProviders()
+        */
 
         //starts location updates
         mLocationRequest = LocationRequest()
@@ -164,11 +140,21 @@ companion object{
 
         updateContext()
 
-        guiHelper.updateUserState(resources.getString(R.string.stateWork))
-        currentState = resources.getString(R.string.stateWork)
-
+        guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+        currentState = resources.getString(R.string.stateDefault)
     }
 
+    //Build the GUI given a hashmap. Called from CAPAstate.setState
+    fun buildGUI(frags : HashMap<widgetHolder, Double>){
+        removeAllWidgets()
+        val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
+        for (entry in sorted) {
+            //Log.d("Trying to build: ",entry.key.className)
+            if(entry.key != null)
+                createDefaultWidget(entry.key)
+            //createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
+        }
+    }
 
     //for changing individual default widgets
     private fun helperQueryUserPrefWidget(widgetType : String){
@@ -201,6 +187,7 @@ companion object{
 
     //Search to set defaults if none exist
     private fun setDefaultProviders(){
+        /*
         val clockArray = arrayOf(
             ComponentName("com.sec.android.app.clockpackage", "com.sec.android.widgetapp.analogclock.AnalogClockWidgetProvider"),
             ComponentName("com.sec.android.app.clockpackage", "com.sec.android.widgetapp.digitalclock.DigitalClockWidgetProvider"),
@@ -288,20 +275,8 @@ companion object{
         }
 
 
+*/
 
-
-    }
-
-    //Build the GUI given a hashmap. Called from CAPAstate.setState
-    fun buildGUI(frags : HashMap<AppWidgetProviderInfo?, Double>){
-        removeAllWidgets()
-        val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
-        for (entry in sorted) {
-            //Log.d("Trying to build: ",entry.key.className)
-            if(entry.key != null)
-                createDefaultWidget(entry.key)
-            //createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
-        }
     }
 
     //updates textbox context every 1000 milliseconds
@@ -311,6 +286,8 @@ companion object{
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString()
 
+
+                /*
                 //If context has changed, updateuserstate
                 if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
                     guiHelper.updateUserState(resources.getString(R.string.stateDriving))
@@ -333,7 +310,7 @@ companion object{
                     currentState = resources.getString(R.string.stateDefault)
                 }
 
-
+                */
             }
         }
     }
@@ -348,21 +325,30 @@ companion object{
             childCount--
         }
     }
-    private fun createDefaultWidget(awpi : AppWidgetProviderInfo?) {
-
+    private fun createDefaultWidget(awpi : widgetHolder) {
         val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
         val hostView = mAppWidgetHost.createView(
             this.applicationContext,
-            appWidgetId, awpi
+            awpi.id, awpi.awpi
         )
-        hostView.setAppWidget(appWidgetId, awpi)
+        hostView.setAppWidget(appWidgetId, awpi.awpi)
         hostView.setOnLongClickListener {
             Log.d("TAG", "long click createWidget")
             guiHelper.removeWidget(awpi)
 //            removeWidget(hostView)
             true
         }
+
+
         mainlayout.addView(hostView)
+    }
+    private fun createWidget(data: Intent) {
+        val extras = data.extras
+        val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+        val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
+
+        val h = widgetHolder(appWidgetInfo,appWidgetId)
+        guiHelper.addWidget(h)
     }
 
     //logic to add a new widget to current state using floating action button
@@ -384,49 +370,49 @@ companion object{
                     prefs.music = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(awpiToChange)) {
                         guiHelper.stateMap.remove(awpiToChange)
-                        guiHelper.addWidget(prefs.music)
+                        //guiHelper.addWidget(prefs.music)
                     }
                 }
                 REQUEST_APPWIDGET_CLOCK -> {
                     prefs.clock = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(awpiToChange)) {
                         guiHelper.stateMap.remove(awpiToChange)
-                        guiHelper.addWidget(prefs.clock)
+                        //guiHelper.addWidget(prefs.clock)
                     }
                 }
                 REQUEST_APPWIDGET_SEARCH -> {
                     prefs.search = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(awpiToChange)) {
                         guiHelper.stateMap.remove(awpiToChange)
-                        guiHelper.addWidget(prefs.search)
+                        //guiHelper.addWidget(prefs.search)
                     }
                 }
                 REQUEST_APPWIDGET_EMAIL -> {
                     prefs.email = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(awpiToChange)) {
                         guiHelper.stateMap.remove(awpiToChange)
-                        guiHelper.addWidget(prefs.email)
+                        //guiHelper.addWidget(prefs.email)
                     }
                 }
                 REQUEST_APPWIDGET_CALENDAR -> {
                     prefs.calendar = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(awpiToChange)) {
                         guiHelper.stateMap.remove(awpiToChange)
-                        guiHelper.addWidget(prefs.calendar)
+                        //guiHelper.addWidget(prefs.calendar)
                     }
                 }
                 REQUEST_APPWIDGET_NOTES -> {
                     prefs.notes = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(awpiToChange)) {
                         guiHelper.stateMap.remove(awpiToChange)
-                        guiHelper.addWidget(prefs.notes)
+                        //guiHelper.addWidget(prefs.notes)
                     }
                 }
                 REQUEST_APPWIDGET_WEATHER -> {
                     prefs.weather = widgetPrefHelper(data!!)
                     if(guiHelper.stateMap.contains(awpiToChange)) {
                         guiHelper.stateMap.remove(awpiToChange)
-                        guiHelper.addWidget(prefs.weather)
+                        //guiHelper.addWidget(prefs.weather)
                     }
                 }
 
@@ -439,10 +425,10 @@ companion object{
             }
         }
     }
-    private fun widgetPrefHelper(data: Intent) : AppWidgetProviderInfo{
+    private fun widgetPrefHelper(data: Intent) : widgetHolder{
         val extras = data.extras
         val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-        return mAppWidgetManager.getAppWidgetInfo(appWidgetId)
+        return widgetHolder(mAppWidgetManager.getAppWidgetInfo(appWidgetId),appWidgetId)
     }
     private fun configureWidget(data: Intent) {
         val extras = data.extras
@@ -456,31 +442,6 @@ companion object{
         } else {
             createWidget(data)
         }
-    }
-    private fun createWidget(data: Intent) {
-        val extras = data.extras
-        val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-        val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
-
-        val hostView = mAppWidgetHost.createView(
-            this.applicationContext,
-            appWidgetId, appWidgetInfo
-        )
-
-        guiHelper.addWidget(appWidgetInfo)
-        //Log.d("TAG",appWidgetInfo.provider.packageName)
-        //Log.d("TAG",appWidgetInfo.provider.className)
-
-//        hostView.setAppWidget(appWidgetId, appWidgetInfo)
-//        hostView.setOnLongClickListener {
-//            Log.d("TAG", "long click createWidget")
-////            removeWidget(hostView)
-//            guiHelper.removeWidget(cn)
-//            true
-//        }
-//        mainlayout.addView(hostView)
-//
-//        currentWidgetList.add(appWidgetInfo)
     }
 
     override fun onResume(){
@@ -562,11 +523,13 @@ companion object{
         }
         else if(id == R.id.setWork){
             Toast.makeText(this, "State Changed to Work", Toast.LENGTH_LONG).show()
-            guiHelper.updateUserState("atWork")
+            currentState = resources.getString(R.string.stateWork)
+            guiHelper.updateUserState(resources.getString(R.string.stateWork))
         }
         else if(id == R.id.setDefault){
             Toast.makeText(this, "State Changed to Default", Toast.LENGTH_LONG).show()
-            guiHelper.updateUserState("default")
+            currentState = resources.getString(R.string.stateDefault)
+            guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         }
 
         return super.onOptionsItemSelected(item)
@@ -600,9 +563,6 @@ companion object{
             school = getLocationFromAddress(this, userProfile.getField("School"))
             sDistance  = mLastLocation.distanceTo(school)
         }catch (e: Exception){
-            if(schoolDialog && userProfile.getField("School")!="None") {
-                schoolDialog = false
-            }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
@@ -610,9 +570,6 @@ companion object{
             work = getLocationFromAddress(this, userProfile.getField("Work"))
             wDistance  = mLastLocation.distanceTo(work)
         }catch (e: Exception){
-            if(workDialog && userProfile.getField("Work")!="None") {
-                workDialog = false
-            }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
@@ -620,9 +577,6 @@ companion object{
             home = getLocationFromAddress(this, userProfile.getField("Home"))
             hDistance  = mLastLocation.distanceTo(home)
         }catch (e: Exception){
-            if(homeDialog && userProfile.getField("Home")!="None") {
-                homeDialog = false
-            }
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
@@ -721,139 +675,4 @@ companion object{
             true
         }
     }
-
-
-    //CURRENTLY UNUSED FRAGMENT LOGIC
-/*
-    private fun getAppropriateHeight(fragmentType : String) : Int{
-        return when(fragmentType){
-            in "alarmDisplay", "mediaPlayer" -> screenHeight/7
-            else -> 1500
-        }
-    }
-    private fun getScreenHeight() : Int{
-        var display = windowManager.defaultDisplay
-        val size = Point()
-        display.getSize(size)
-        return size.y
-    }
-
-    private fun removeAllFragments(){
-        for ( i in fragments){
-            removeFragment(i)
-        }
-        fragments.clear()
-        for (i in viewIDs){
-            val currentFrame :View = findViewById(i)
-            currentFrame.visibility = GONE
-        }
-        viewIDs.clear()
-    }
-
-
-    //creates a new frame and fragment in it of type fragmentType
-    //if a new fragment at bottom is desired, pass nothing for index
-    //if a new fragment at top is desired, pass indexOfTop for index
-    private fun createFragment(fragmentType:String,height:Int=350,index:Int=-1){
-        val newPadding = FrameLayout(this)
-        newPadding.id = ViewCompat.generateViewId()
-        val newFrag = FrameLayout(this)
-        newFrag.id = ViewCompat.generateViewId()
-        //add to bottom
-        if(index==-1){
-            viewIDs.add(newPadding.id)
-            mainLayout.addView(newPadding)
-            viewIDs.add(newFrag.id)
-            mainLayout.addView(newFrag)
-        }
-        //add to index
-        else{
-            viewIDs.add(newFrag.id)
-            mainLayout.addView(newFrag,index)
-            viewIDs.add(newPadding.id)
-            mainLayout.addView(newPadding,index)
-        }
-        newPadding.layoutParams.height = paddingHeight
-        newPadding.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
-        newFrag.layoutParams.height = height
-        newFrag.layoutParams.width =  ActionBar.LayoutParams.MATCH_PARENT
-
-        //initialize fragment of type fragmentType
-        val fragToAdd : Fragment
-        when(fragmentType) {
-            "alarmDisplay" -> {
-                fragToAdd = alarmDisplay()
-                currentWidgets.add("alarmDisplay") }
-            "mediaPlayer" -> {
-                fragToAdd = mediaPlayer()
-                currentWidgets.add("mediaPlayer") }
-            else -> {
-                fragToAdd = testingFragment()
-                currentWidgets.add("testingFragment") }
-        }
-
-        //add fragment to created frame
-        fragments.add(fragToAdd)
-        addFragment(fragToAdd, newFrag.id)
-    }
-
-    //helper functions to add fragments more easily
-    private inline fun FragmentManager.inTransaction(func: FragmentTransaction.() -> Unit) {
-        val fragmentTransaction = beginTransaction()
-        fragmentTransaction.func()
-        fragmentTransaction.commit()
-    }
-    private fun AppCompatActivity.addFragment(fragment: Fragment, frameId: Int){
-        supportFragmentManager.inTransaction { add(frameId, fragment) }
-    }
-    private fun AppCompatActivity.replaceFragment(fragment: Fragment, frameId: Int) {
-        supportFragmentManager.inTransaction{replace(frameId, fragment)}
-    }
-    private fun AppCompatActivity.removeFragment(fragment: Fragment) {
-        supportFragmentManager.inTransaction { remove(fragment) }
-    }
-
-    override fun onDestroy() {
-        databaseHandler!!.close()
-        super.onDestroy()
-    }
-        //logic to add a new widget to current state using floating action button
-    fun clickAdd(view:View){
-
-
-        //display list of widgets to user
-        val availableWidgets = ArrayList<String>()
-        for (temp in listOfWidgets){
-            if(!currentWidgets.contains(temp)){
-                availableWidgets.add(temp)
-            }
-        }
-        val widArr = arrayOfNulls<String>(availableWidgets.size)
-        availableWidgets.toArray(widArr)
-        val builder = AlertDialog.Builder(view.context)
-        if(widArr.isEmpty()){
-            builder.setTitle("All available widgets already added to this state.")
-            builder.setNegativeButton("Cancel") { dialog, _ ->
-                dialog.cancel()
-            }
-            builder.create()
-            builder.show()
-        }
-        else {
-            builder.setTitle("Select widget to add")
-                .setItems(widArr) { dialog, which ->
-                    //upon user selection, add widget to bottom of gui
-                    //send widget info to capastate to add to custom UI
-                    guiHelper.addWidget(widArr[which]!!)
-                    dialog.dismiss()
-                }
-            builder.setNegativeButton("Cancel") { dialog, _ ->
-                dialog.cancel()
-            }
-            builder.create()
-            builder.show()
-        }
-
-
-*/
 }

@@ -2,14 +2,17 @@ package com.example.capaproject
 
 import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
+import android.util.Log
 
-class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : UserPrefApps) {
+class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
-    var stateMap : HashMap<AppWidgetProviderInfo?, Double> = HashMap()
-    var dummyState : CAPAhandler = defaultState(this,context,prefs)
+    var stateMap : HashMap<widgetHolder?, Double> = HashMap()
+    //dummy state needed for initial load
+    var dummyState : CAPAhandler = defaultState(this,context,prefs,db)
+
     //List of possible states stores as CAPAhandler objects
-    var atWork : CAPAhandler = atWorkState(this,context,prefs)
-    var default : CAPAhandler = defaultState(this,context,prefs)
+    var atWork : CAPAhandler = atWorkState(this,context,prefs,db)
+    var default : CAPAhandler = defaultState(this,context,prefs,db)
 
     //current state will refer to one of the above possible state variables
     var currentState : CAPAhandler
@@ -60,14 +63,14 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
                 currentState.updateGUI(stateMap)
         }
     }
-    fun removeWidget(name:AppWidgetProviderInfo?){
+    fun removeWidget(name:widgetHolder?){
         if(name!=null) {
             stateMap.remove(name)
             refresh()
         }
     }
     //called when a user adds a custom widget to state.
-    fun addWidget(name:AppWidgetProviderInfo?){
+    fun addWidget(name:widgetHolder?){
         if(name!=null) {
             //add new widget name to hashmap
             //Logic to add new widget at slot 0 then change weight of next one up
@@ -88,14 +91,6 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
             stateMap[name] = 0.0
 
 
-            //for debugging
-            /*
-        //print keys/values for testing
-        for (entry in stateMap) {
-            Log.d("TAG",entry.key.className)
-            Log.d("TAG",entry.value.toString())
-        }*/
-
             //refresh display based on new hashmap.
             refresh()
         }
@@ -104,11 +99,11 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler, val prefs : 
         currentState.updateGUI(stateMap)
     }
     //returns a hashmap variable with current state - to save to database
-    fun getList() : HashMap<AppWidgetProviderInfo?,Double> {
+    fun getList() : HashMap<widgetHolder?,Double> {
         return stateMap
     }
     //Load data from database into local hashmap variable
-    private fun loadList(newMap : HashMap<AppWidgetProviderInfo?,Double>){
+    private fun loadList(newMap : HashMap<widgetHolder?,Double>){
         //use Nick's database object to retrieve data and store in stateMap
         stateMap = newMap
     }

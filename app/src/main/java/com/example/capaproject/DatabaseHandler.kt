@@ -273,14 +273,14 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Adds or updates work state info in database
-    private fun updateWorkData(map: HashMap<widgetHolder?, Double>){
+    private fun updateWorkData(map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
         //db.execSQL(WORK_DELETE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
 
         for(entry in map){
             if(entry.key != null){
-                var selection = entry.key!!.provider.packageName
+                var selection = entry.key!!.awpi!!.provider.packageName
                 selection = selection.replace(".", "")
                 Log.d("pkg", selection)
                 val mapperString = mapper.writeValueAsString(entry.key)
@@ -290,14 +290,14 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
                     put(WorkEntry.COLUMN_WIDGETINFO, mapperString)
                     put(WorkEntry.COLUMN_WEIGHT, weight)
                 }
-                
+
                 db.update(WorkEntry.TABLE_NAME, values, null, null)
             }
         }
         db.close()
     }
 
-    private fun updateDefaultData(map: HashMap<widgetHolder?, Double>){
+    private fun updateDefaultData(map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
         db.execSQL(DEFAULT_DELETE_ENTRIES)
         db.execSQL(DEFAULT_CREATE_ENTRIES)
@@ -318,7 +318,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Updates state info in corresponding table using passed string to check which state
-    fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder?, Double>){
+    fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
         when(stateName){
             context.resources.getString(R.string.stateWork) -> updateWorkData(map)
             context.resources.getString(R.string.stateDefault) -> updateDefaultData(map)
@@ -353,7 +353,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Uses passed string to get info from corresponding state table
-    fun getStateData(stateName: String): HashMap<widgetHolder?, Double>? {
+    fun getStateData(stateName: String): HashMap<widgetHolder, Double>? {
         return when (stateName) {
             context.resources.getString(R.string.stateWork) -> getWorkData()
             context.resources.getString(R.string.stateDefault) -> getDefaultData()
@@ -361,11 +361,11 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         }
     }
 
-    private fun getDefaultData(): HashMap<widgetHolder?, Double> {
+    private fun getDefaultData(): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
         db.execSQL(DEFAULT_CREATE_ENTRIES)
 
-        val map: HashMap<widgetHolder?, Double> = HashMap()
+        val map: HashMap<widgetHolder, Double> = HashMap()
 
         val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
@@ -383,11 +383,11 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Gets work state info from database and returns as HashMap
-    private fun getWorkData(): HashMap<widgetHolder?, Double> {
+    private fun getWorkData(): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
 
-        val map: HashMap<widgetHolder?, Double> = HashMap()
+        val map: HashMap<widgetHolder, Double> = HashMap()
 
         val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)

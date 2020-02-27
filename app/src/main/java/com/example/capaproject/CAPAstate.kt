@@ -6,7 +6,7 @@ import android.util.Log
 
 class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
-    var stateMap : HashMap<widgetHolder?, Double> = HashMap()
+    var stateMap : HashMap<widgetHolder, Double> = HashMap()
     //dummy state needed for initial load
     var dummyState : CAPAhandler = defaultState(this,context,prefs,db)
 
@@ -63,14 +63,14 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
                 currentState.updateGUI(stateMap)
         }
     }
-    fun removeWidget(name:widgetHolder?){
+    fun removeWidget(name:widgetHolder){
         if(name!=null) {
             stateMap.remove(name)
             refresh()
         }
     }
     //called when a user adds a custom widget to state.
-    fun addWidget(name:widgetHolder?){
+    fun addWidget(name:widgetHolder){
         if(name!=null) {
             //add new widget name to hashmap
             //Logic to add new widget at slot 0 then change weight of next one up
@@ -99,11 +99,11 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
         currentState.updateGUI(stateMap)
     }
     //returns a hashmap variable with current state - to save to database
-    fun getList() : HashMap<widgetHolder?,Double> {
+    fun getList() : HashMap<widgetHolder,Double> {
         return stateMap
     }
     //Load data from database into local hashmap variable
-    private fun loadList(newMap : HashMap<widgetHolder?,Double>){
+    private fun loadList(newMap : HashMap<widgetHolder,Double>){
         //use Nick's database object to retrieve data and store in stateMap
         stateMap = newMap
     }

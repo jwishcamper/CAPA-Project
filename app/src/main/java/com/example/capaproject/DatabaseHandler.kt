@@ -275,14 +275,14 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     //Adds or updates work state info in database
     private fun updateWorkData(map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
-        //db.execSQL(WORK_DELETE_ENTRIES)
+        db.execSQL(WORK_DELETE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
 
         for(entry in map){
             if(entry.key != null){
-                var selection = entry.key!!.awpi!!.provider.packageName
-                selection = selection.replace(".", "")
-                Log.d("pkg", selection)
+                //var selection = entry.key!!.awpi!!.provider.packageName
+                //selection = selection.replace(".", "")
+                //Log.d("pkg", selection)
                 val mapperString = mapper.writeValueAsString(entry.key)
                 val weight = entry.value
 
@@ -291,7 +291,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
                     put(WorkEntry.COLUMN_WEIGHT, weight)
                 }
 
-                db.update(WorkEntry.TABLE_NAME, values, null, null)
+                db.insert(WorkEntry.TABLE_NAME, null, values)
             }
         }
         db.close()
@@ -353,11 +353,11 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Uses passed string to get info from corresponding state table
-    fun getStateData(stateName: String): HashMap<widgetHolder, Double>? {
+    fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
         return when (stateName) {
             context.resources.getString(R.string.stateWork) -> getWorkData()
-            context.resources.getString(R.string.stateDefault) -> getDefaultData()
-            else -> return null
+            //context.resources.getString(R.string.stateDefault) -> getDefaultData()
+            else -> getDefaultData()
         }
     }
 
@@ -369,7 +369,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
 
         val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
-        cursor!!.moveToFirst()
+        cursor.moveToFirst()
         while(!cursor.isAfterLast){
             val jsonString = cursor.getString(cursor.getColumnIndex(DefaultEntry.COLUMN_WIDGETINFO))
             val weight = cursor.getDouble(cursor.getColumnIndex(DefaultEntry.COLUMN_WEIGHT))
@@ -391,10 +391,10 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
 
         val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
-        cursor!!.moveToFirst()
+        cursor.moveToFirst()
         while(!cursor.isAfterLast){
-            val jsonString = cursor.getString(cursor.getColumnIndex("WidgetInfo"))
-            val weight = cursor.getDouble(cursor.getColumnIndex("Weight"))
+            val jsonString = cursor.getString(cursor.getColumnIndex(WorkEntry.COLUMN_WIDGETINFO))
+            val weight = cursor.getDouble(cursor.getColumnIndex(WorkEntry.COLUMN_WEIGHT))
             val appWidgetObject : widgetHolder = mapper.readValue(jsonString)
             map[appWidgetObject] = weight
             cursor.moveToNext()

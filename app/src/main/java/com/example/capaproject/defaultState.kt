@@ -3,7 +3,7 @@ package com.example.capaproject
 import android.appwidget.AppWidgetProviderInfo
 import android.util.Log
 
-class defaultState(newCstate: CAPAstate,val context: MainActivity, private val prefs : UserPrefApps, val db: DatabaseHandler) : CAPAhandler{
+class defaultState(val newCstate: CAPAstate,val context: MainActivity, private val prefs : UserPrefApps) : CAPAhandler{
     var capastate : CAPAstate = newCstate
 
     override fun updateGUI() {
@@ -11,9 +11,10 @@ class defaultState(newCstate: CAPAstate,val context: MainActivity, private val p
         val hashMap : HashMap<widgetHolder, Double> = HashMap()
 
         //Store "default" for each state here.
-        //hashMap[prefs.search] = 1.0
-        //hashMap[prefs.weather] = 0.0
+        hashMap[prefs.search!!] = 1.0
+        hashMap[prefs.weather!!] = 0.0
 
+        newCstate.stateMap=hashMap
         context.buildGUI(hashMap)
     }
     override fun updateGUI(map : HashMap<widgetHolder,Double>){

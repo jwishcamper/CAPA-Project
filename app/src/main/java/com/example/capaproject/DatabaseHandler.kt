@@ -458,12 +458,10 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         val cursor = db.rawQuery(selectQuery, null)
         cursor.moveToLast()
         //cursor.moveToFirst()
-        /*while(!cursor.isAfterLast){
-            if(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)) == stateName){
-                db.insert(UserHistoryEntry.TABLE_NAME, null, values)
-            }
+        while(!cursor.isAfterLast){
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
             cursor.moveToNext()
-        }*/
+        }
         cursor.close()
         db.close()
     }

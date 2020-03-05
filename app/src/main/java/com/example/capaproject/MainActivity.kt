@@ -475,7 +475,7 @@ companion object{
 
     private fun removeWidget(hostView: AppWidgetHostView) {
         //println(hostView.appWidgetId)
-        mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)
+        //mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)
         mainlayout.removeView(hostView)
     }
     internal fun addEmptyData(pickIntent: Intent) {

@@ -16,10 +16,9 @@ import com.example.capaproject.UserPrefsContract.UserPrefsEntry
 import com.example.capaproject.UserHistoryContract.UserHistoryEntry
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-
-//import com.example.capaproject.StateReaderContract.StateEntry
 
 lateinit var mapper : ObjectMapper
 
@@ -44,6 +43,7 @@ private object UserHistoryContract{
 private object WorkReaderContract{
     object WorkEntry : BaseColumns{
         const val TABLE_NAME = "Work"
+        const val COLUMN_WIDGETNAME = "WidgetName"
         const val COLUMN_WIDGETINFO = "WidgetInfo"
         const val COLUMN_WEIGHT = "Weight"
     }
@@ -52,6 +52,7 @@ private object WorkReaderContract{
 private object DefaultReaderContract{
     object DefaultEntry : BaseColumns{
         const val TABLE_NAME = "DefaultTable"
+        const val COLUMN_WIDGETNAME = "WidgetName"
         const val COLUMN_WIDGETINFO = "WidgetInfo"
         const val COLUMN_WEIGHT = "Weight"
     }
@@ -60,6 +61,7 @@ private object DefaultReaderContract{
 private object SchoolReaderContract{
     object SchoolEntry : BaseColumns{
         const val TABLE_NAME = "School"
+        const val COLUMN_WIDGETNAME = "WidgetName"
         const val COLUMN_WIDGETINFO = "WidgetInfo"
         const val COLUMN_WEIGHT = "Weight"
     }
@@ -86,18 +88,21 @@ private const val USER_PREFS_CREATE_ENTRIES =
 private const val WORK_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${WorkEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${WorkEntry.COLUMN_WIDGETNAME} TEXT," +
             "${WorkEntry.COLUMN_WIDGETINFO} TEXT," +
             "${WorkEntry.COLUMN_WEIGHT} DOUBLE)"
 
 private const val DEFAULT_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${DefaultEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${DefaultEntry.COLUMN_WIDGETNAME} TEXT," +
             "${DefaultEntry.COLUMN_WIDGETINFO} TEXT," +
             "${DefaultEntry.COLUMN_WEIGHT} DOUBLE)"
 
 private const val SCHOOL_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${SchoolEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${SchoolEntry.COLUMN_WIDGETNAME} TEXT," +
             "${SchoolEntry.COLUMN_WIDGETINFO} TEXT," +
             "${SchoolEntry.COLUMN_WEIGHT} DOUBLE)"
 
@@ -129,6 +134,10 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
         db.execSQL(SCHOOL_CREATE_ENTRIES)
         db.execSQL(DEFAULT_CREATE_ENTRIES)
+
+        mapper = jacksonObjectMapper()
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -150,10 +159,10 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Function to update user preferences for every state
-    //fun updateStatePrefs(prefs : UserPrefApps){
-    //    updateWorkPrefs(prefs)
-    //    updateSchoolPrefs(prefs)
-    //}
+    private fun updateStatePrefs(prefs : UserPrefApps){
+        //updateWorkPrefs(prefs)
+        updateDefaultPrefs(prefs)
+    }
 
     //Function to update user preferences for Work state
     /*private fun updateWorkPrefs(prefs: UserPrefApps) {
@@ -196,43 +205,22 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
             //Log.d("test", cursor.getString(cursor.getColumnIndex(WorkEntry.COLUMN_CLASS)))
         }
         db.close()
-    }
+    }*/
 
-    private fun updateSchoolPrefs(prefs: UserPrefApps) {
+    private fun updateDefaultPrefs(prefs: UserPrefApps) {
         val db = this.writableDatabase
-        db.execSQL(SCHOOL_CREATE_ENTRIES)
+        db.execSQL(DEFAULT_CREATE_ENTRIES)
 
-        val clock = prefs.getAttr("Clock")
-        val music = prefs.getAttr("Music")
 
-        val clockPKG = clock.packageName
-        val clockCLS = clock.className
 
-        val clockValues = ContentValues().apply{
-            put(SchoolEntry.COLUMN_PACKAGE, clockPKG)
-            put(SchoolEntry.COLUMN_CLASS, clockCLS)
-        }
-
-        db.replace(SchoolEntry.TABLE_NAME, null, clockValues)
-
-        val musicPKG = music.packageName
-        val musicCLS = music.className
-
-        val musicValues = ContentValues().apply{
-            put(SchoolEntry.COLUMN_PACKAGE, musicPKG)
-            put(SchoolEntry.COLUMN_CLASS, musicCLS)
-        }
-
-        db.replace(SchoolEntry.TABLE_NAME, null, musicValues)
-
-        val selectQuery = "SELECT * FROM ${SchoolEntry.TABLE_NAME}"
+        val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor.moveToFirst()
         while(!cursor.isAfterLast){
-            Log.d("test", cursor.getString(cursor.getColumnIndex(SchoolEntry.COLUMN_CLASS)))
+            //Log.d("test", cursor.getString(cursor.getColumnIndex(SchoolEntry.COLUMN_CLASS)))
         }
         db.close()
-    }*/
+    }
 
     //Adds or updates user preferences in database
     private fun updateUserPrefsData(prefs: UserPrefApps){
@@ -271,12 +259,11 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
             /*when {
                 cursor.getString(cursor.getColumnIndex("Widget")) == "Clock" -> prefs.clock = compName
                 cursor.getString(cursor.getColumnIndex("Widget")) == "Music" -> prefs.music = compName
-                /*else -> {
+                else -> {
                     prefs.clock = ComponentName("", "")
                     prefs.music = ComponentName("", "")
-                }*/
+                }
             }*/
-
             cursor.moveToNext()
         }
         cursor.close()
@@ -286,48 +273,46 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Adds or updates work state info in database
-    private fun updateWorkData(map: HashMap<AppWidgetProviderInfo?, Double>){
+    private fun updateWorkData(map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
         db.execSQL(WORK_DELETE_ENTRIES)
         db.execSQL(WORK_CREATE_ENTRIES)
 
         for(entry in map){
-            if(entry.key != null){
-                val mapperString = mapper.writeValueAsString(entry.key)
-                val weight = entry.value
-
-                val values = ContentValues().apply{
-                    put(WorkEntry.COLUMN_WIDGETINFO, mapperString)
-                    put(WorkEntry.COLUMN_WEIGHT, weight)
-                }
-                db.insert(WorkEntry.TABLE_NAME, null, values)
+            //var selection = entry.key!!.awpi!!.provider.packageName
+            //selection = selection.replace(".", "")
+            //Log.d("pkg", selection)
+            val mapperString = mapper.writeValueAsString(entry.key)
+            val weight = entry.value
+            val values = ContentValues().apply{
+                put(WorkEntry.COLUMN_WIDGETINFO, mapperString)
+                put(WorkEntry.COLUMN_WEIGHT, weight)
             }
+            db.insert(WorkEntry.TABLE_NAME, null, values)
         }
         db.close()
     }
 
-    private fun updateDefaultData(map: HashMap<AppWidgetProviderInfo?, Double>){
+    private fun updateDefaultData(map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
         db.execSQL(DEFAULT_DELETE_ENTRIES)
         db.execSQL(DEFAULT_CREATE_ENTRIES)
 
         for(entry in map){
-            if(entry.key != null){
-                val mapperString = mapper.writeValueAsString(entry.key)
-                val weight = entry.value
+            val mapperString = mapper.writeValueAsString(entry.key)
+            val weight = entry.value
 
-                val values = ContentValues().apply{
-                    put(DefaultEntry.COLUMN_WIDGETINFO, mapperString)
-                    put(DefaultEntry.COLUMN_WEIGHT, weight)
-                }
-                db.insert(DefaultEntry.TABLE_NAME, null, values)
+            val values = ContentValues().apply{
+                put(DefaultEntry.COLUMN_WIDGETINFO, mapperString)
+                put(DefaultEntry.COLUMN_WEIGHT, weight)
             }
+            db.insert(DefaultEntry.TABLE_NAME, null, values)
         }
         db.close()
     }
 
     //Updates state info in corresponding table using passed string to check which state
-    fun updateDatabaseState(stateName: String, map: HashMap<AppWidgetProviderInfo?, Double>){
+    fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
         when(stateName){
             context.resources.getString(R.string.stateWork) -> updateWorkData(map)
             context.resources.getString(R.string.stateDefault) -> updateDefaultData(map)
@@ -362,26 +347,26 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Uses passed string to get info from corresponding state table
-    fun getStateData(stateName: String): HashMap<AppWidgetProviderInfo?, Double>? {
+    fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
         return when (stateName) {
             context.resources.getString(R.string.stateWork) -> getWorkData()
-            context.resources.getString(R.string.stateDefault) -> getDefaultData()
-            else -> return null
+            else -> getDefaultData()
         }
     }
 
-    private fun getDefaultData(): HashMap<AppWidgetProviderInfo?, Double> {
+    private fun getDefaultData(): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
         db.execSQL(DEFAULT_CREATE_ENTRIES)
 
-        val map: HashMap<AppWidgetProviderInfo?, Double> = HashMap()
+        val map: HashMap<widgetHolder, Double> = HashMap()
+
         val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor!!.moveToFirst()
         while(!cursor.isAfterLast){
-            val jsonString = cursor.getString(cursor.getColumnIndex("WidgetInfo"))
-            val weight = cursor.getDouble(cursor.getColumnIndex("Weight"))
-            val appWidgetObject : AppWidgetProviderInfo = mapper.readValue(jsonString)
+            val jsonString = cursor.getString(cursor.getColumnIndex(DefaultEntry.COLUMN_WIDGETINFO))
+            val weight = cursor.getDouble(cursor.getColumnIndex(DefaultEntry.COLUMN_WEIGHT))
+            val appWidgetObject : widgetHolder = mapper.readValue(jsonString)
             map[appWidgetObject] = weight
             cursor.moveToNext()
         }
@@ -391,23 +376,25 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Gets work state info from database and returns as HashMap
-    private fun getWorkData(): HashMap<AppWidgetProviderInfo?, Double> {
+    private fun getWorkData(): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
         db.execSQL(WORK_CREATE_ENTRIES)
 
-        val map: HashMap<AppWidgetProviderInfo?, Double> = HashMap()
+        val map: HashMap<widgetHolder, Double> = HashMap()
+
         val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor!!.moveToFirst()
         while(!cursor.isAfterLast){
             val jsonString = cursor.getString(cursor.getColumnIndex("WidgetInfo"))
             val weight = cursor.getDouble(cursor.getColumnIndex("Weight"))
-            val appWidgetObject : AppWidgetProviderInfo = mapper.readValue(jsonString)
+            val appWidgetObject : widgetHolder = mapper.readValue(jsonString)
             map[appWidgetObject] = weight
             cursor.moveToNext()
         }
         cursor.close()
         db.close()
+
         return map
     }
 
@@ -470,8 +457,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         val selectQuery = "SELECT * FROM ${UserHistoryEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
         cursor.moveToLast()
-        Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_DATE_TIME)))
-        Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
         //cursor.moveToFirst()
         /*while(!cursor.isAfterLast){
             if(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)) == stateName){

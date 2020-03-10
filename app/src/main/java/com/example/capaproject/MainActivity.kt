@@ -32,6 +32,7 @@ import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import java.io.*
 import java.util.ArrayList
+import com.jmedeisis.draglinearlayout.DragLinearLayout;
 
 
 class MainActivity : AppCompatActivity() {
@@ -61,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var infos : List<AppWidgetProviderInfo>
 
-    private lateinit var mainlayout: ViewGroup
+    private lateinit var mainlayout: DragLinearLayout
 
     //helper object to determine user state
     lateinit var stateHelper: stateManager
@@ -86,6 +87,7 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         mainlayout = findViewById(R.id.mainLayout)
 
         //make sure mLastLocation is not null
@@ -106,12 +108,6 @@ companion object{
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
-
-/*
-        mapper = jacksonObjectMapper()
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
-*/
 
         //Log.d("hostView",hostViewReloaded.awpi.provider.packageName)
         prefs = UserPrefApps()
@@ -233,12 +229,14 @@ companion object{
             childCount--
         }
     }
+
     private fun createDefaultWidget(awpi : widgetHolder) {
         //val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
         val hostView = mAppWidgetHost.createView(
             this.applicationContext,
             awpi.id, awpi.awpi
         )
+
         Log.d("App",awpi.awpi.provider.packageName)
         Log.d("App",awpi.awpi.provider.className)
         hostView.setAppWidget(awpi.id, awpi.awpi)
@@ -291,8 +289,8 @@ companion object{
             true
         }
 
+        mainlayout.addDragView(hostView, hostView)
 
-        mainlayout.addView(hostView)
     }
     private fun createWidget(data: Intent) {
         val extras = data.extras

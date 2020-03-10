@@ -12,7 +12,7 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
 
-        <LinearLayout
+        <com.jmedeisis.draglinearlayout.DragLinearLayout
             android:id="@+id/mainLayout"
             android:layout_width="match_parent"
             android:layout_height="fill_parent"
@@ -28,7 +28,7 @@
                 android:paddingTop="16dp"
                 android:text="Personal Assistant" />
 
-        </LinearLayout>
+        </com.jmedeisis.draglinearlayout.DragLinearLayout>
     </ScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

@@ -33,7 +33,7 @@ class WidgetView : AppWidgetHostView {
                 val upVal = System.currentTimeMillis() - down > 300L
                 if (upVal) {
                     longClick!!.onLongClick(this@WidgetView)
-                    //removeView(this@WidgetView)
+                    removeView(this@WidgetView)
                     Log.d("TAG","long click")
                     return true
                 }

@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
     lateinit var userProfile : UserProfile
 
-    //
+    //AppWidgetHost Variables
     private var currentWidgetList = mutableListOf<widgetHolder>()
     private lateinit var mAppWidgetManager: AppWidgetManager
     private lateinit var mAppWidgetHost: WidgetHost
@@ -188,14 +188,11 @@ companion object{
     }
 
     //updates textbox context every 1000 milliseconds
-    //placeholder function to be used for testing
     private fun updateContext(){
         fixedRateTimer("timer",false,0,1000){
             this@MainActivity.runOnUiThread {
-                text.text = stateHelper.getString()
-
-                //commented out for testing puroses
-                /*
+                text.text = stateHelper.getString() // +", State: $currentState"
+/*
                 //If context has changed, updateuserstate
                 if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
                     guiHelper.updateUserState(resources.getString(R.string.stateDriving))
@@ -217,8 +214,8 @@ companion object{
                     guiHelper.updateUserState(resources.getString(R.string.stateDefault))
                     currentState = resources.getString(R.string.stateDefault)
                 }
+*/
 
-                */
             }
         }
     }
@@ -437,7 +434,7 @@ companion object{
 
     private fun removeWidget(hostView: AppWidgetHostView) {
         //println(hostView.appWidgetId)
-        mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)
+        //mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)
         mainlayout.removeView(hostView)
     }
     internal fun addEmptyData(pickIntent: Intent) {

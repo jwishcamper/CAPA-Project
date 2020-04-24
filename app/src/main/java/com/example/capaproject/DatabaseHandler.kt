@@ -154,6 +154,34 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         const val DATABASE_NAME = "Database"
     }
 
+    //cuurently only functions for work state.
+    //want to optimize to do all states without hard coding.
+    fun updateOtherStates(whOld:widgetHolder,whNew:widgetHolder){
+        //eventually, do code here for every state
+
+        //First, get HashMap from database.
+        val map = getWorkData()
+
+        var toUpdate = widgetHolder(whOld.awpi,0)
+        var toUpdateVal = 0.0
+        var found = false
+        //iterate over every value in map
+        for(entry in map){
+            //if class name matches
+            if(entry.key.awpi.provider.className == whOld.awpi.provider.className){
+                toUpdate = entry.key
+                toUpdateVal = entry.value
+                found=true
+            }
+        }
+        if(found){
+            map.remove(toUpdate)
+            map[whNew] = toUpdateVal
+            //only update if needed
+            updateWorkData(map)
+        }
+    }
+
     fun updateUserPrefs(prefs: UserPrefApps){
         updateUserPrefsData(prefs)
     }

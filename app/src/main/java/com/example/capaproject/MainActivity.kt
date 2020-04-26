@@ -1,7 +1,6 @@
 package com.example.capaproject
 
 import android.Manifest
-import android.content.ComponentName
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -10,7 +9,9 @@ import kotlin.collections.HashMap
 import android.app.Activity
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
 import android.appwidget.AppWidgetProviderInfo
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -27,13 +28,8 @@ import java.lang.Exception
 import android.content.res.Resources
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import java.io.*
 import java.util.ArrayList
-import com.fasterxml.jackson.module.kotlin.*
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
     lateinit var userProfile : UserProfile
 
-    //
+    //AppWidgetHost Variables
     private var currentWidgetList = mutableListOf<widgetHolder>()
     private lateinit var mAppWidgetManager: AppWidgetManager
     private lateinit var mAppWidgetHost: WidgetHost
@@ -69,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var guiHelper : CAPAstate
 
     private lateinit var prefs : UserPrefApps
-    private var awpiToChange : widgetHolder? = null
+    private var widgetHolderToChange : widgetHolder? = null
 
     private lateinit var databaseHandler : DatabaseHandler
 
@@ -104,7 +100,7 @@ companion object{
         //databaseHandler.deleteData()
 
         //NUKE USER HISTORY TABLE!!!!!
-        databaseHandler.clearUserHistory()
+        //databaseHandler.clearUserHistory()
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
@@ -121,13 +117,12 @@ companion object{
         prefs = UserPrefApps()
 
         //Load preferences from database here
-            //prefs = databaseHandler.getUserPrefs()
+        prefs = databaseHandler.getUserPrefs()
 
-        //If user has never set prefs, ask for default widgets
-        /*
+        //If user has never set prefs, set them
         if(prefs.isEmpty())
             setDefaultProviders()
-        */
+
 
         //starts location updates
         mLocationRequest = LocationRequest()
@@ -146,6 +141,7 @@ companion object{
 
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
+
     }
 
     //Build the GUI given a hashmap. Called from CAPAstate.setState
@@ -153,140 +149,49 @@ companion object{
         removeAllWidgets()
         val sorted = frags.toList().sortedBy { (_, value) -> value}.toMap()
         for (entry in sorted) {
-            //Log.d("Trying to build: ",entry.key.className)
             createDefaultWidget(entry.key)
-            //createFragment(entry.key,getAppropriateHeight(entry.key),indexOfTop)
         }
     }
 
     //for changing individual default widgets
-    private fun helperQueryUserPrefWidget(widgetType : String){
+    fun helperQueryUserPrefWidget(widgetType : String){
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Please select your preferred $widgetType widget from the following list: ")
-        builder.setPositiveButton("OK") { _, _ ->
-            val appWidgetId = this.mAppWidgetHost.allocateAppWidgetId()
-            val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
-            pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            when(widgetType) {
-                in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK)
-                "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC)
-                "Search" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_SEARCH)
-                "Email" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_EMAIL)
-                "Calendar" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CALENDAR)
-                "Notes" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_NOTES)
-                "Weather" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_WEATHER)
-            }
+        val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
+        val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK)
+        pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        when(widgetType) {
+            in "Clock" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CLOCK)
+            "Music" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_MUSIC)
+            "Search" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_SEARCH)
+            "Email" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_EMAIL)
+            "Calendar" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CALENDAR)
+            "Notes" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_NOTES)
+            "Weather" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_WEATHER)
         }
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.cancel()
-        }
-        builder.create()
-        builder.show()
 
     }
 
     //Search to set defaults if none exist
     private fun setDefaultProviders(){
-        /*
-        val clockArray = arrayOf(
-            ComponentName("com.sec.android.app.clockpackage", "com.sec.android.widgetapp.analogclock.AnalogClockWidgetProvider"),
-            ComponentName("com.sec.android.app.clockpackage", "com.sec.android.widgetapp.digitalclock.DigitalClockWidgetProvider"),
-            ComponentName("com.google.android.deskclock", "com.android.alarmclock.AnalogAppWidgetProvider"),
-            ComponentName("com.google.android.deskclock", "com.android.alarmclock.DigitalAppWidgetProvider"),
-            ComponentName("com.oneplus.deskclock", "com.oneplus.alarmclock.DigitalAppWidgetProvider"),
-            ComponentName("com.oneplus.deskclock", "com.oneplus.alarmclock.AnalogAppWidgetProvider"))
-
-        val musicArray = arrayOf(
-            ComponentName("com.google.android.music", "com.android.music.MediaAppWidgetProvider"),
-            ComponentName("com.spotify.music", "com.spotify.music.features.widget.SpotifyWidget"))
-
-        val searchArray = arrayOf(
-            ComponentName("com.google.android.googlequicksearchbox", "com.google.android.googlequicksearchbox.SearchWidgetProvider"),
-            ComponentName("com.android.chrome", "org.chromium.chrome.browser.searchwidget.SearchWidgetProvider"),
-            ComponentName("com.microsoft.launcher", "com.microsoft.bingsearchsdk.api.ui.widgets.SearchWidgetProvider"))
-
-        val emailArray = arrayOf(
-            ComponentName("com.samsung.android.email.provider", "com.samsung.android.email.widget.WidgetProvider"),
-            ComponentName("com.google.android.gm", "com.google.android.gm.widget.GmailWidgetProvider"),
-            ComponentName("com.microsoft.office.outlook", "com.acompli.acompli.InboxWidgetProvider"))
-
-        val calendarArray = arrayOf(
-            ComponentName("com.samsung.android.calendar", "com.android.calendar.widget.list.ListWidgetProvider"),
-            ComponentName("com.google.android.calendar", "com.android.calendar.widget.CalendarAppWidgetProvider"))
-
-        val notesArray = arrayOf(
-            ComponentName("com.samsung.android.app.notes", "com.samsung.android.app.notes.widget.WidgetProvider"),
-            ComponentName("com.microsoft.office.onenote", "com.microsoft.office.onenote.ui.widget.ONMTextNoteWidgetReceiver"))
-
-        val weatherArray = arrayOf(
-            ComponentName("com.sec.android.daemonapp","com.sec.android.daemonapp.appwidget.WeatherAppWidget"),
-            ComponentName("net.oneplus.weather", "net.oneplus.weather.widget.widget.WeatherWidgetProvider"))
-
-        for (info in infos) {
-            for(element in clockArray) {
-                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
-                    //we found one
-                    prefs.clock = info
-                    break
-                }
-            }
-            for(element in musicArray){
-                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
-                    //we found one
-                    prefs.music = info
-                    break
-                }
-            }
-            for(element in searchArray){
-                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
-                    //we found one
-                    prefs.search = info
-                    break
-                }
-            }
-            for(element in emailArray){
-                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
-                    //we found one
-                    prefs.email = info
-                    break
-                }
-            }
-            for(element in calendarArray){
-                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
-                    //we found one
-                    prefs.calendar = info
-                    break
-                }
-            }
-            for(element in notesArray){
-                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
-                    //we found one
-                    prefs.notes = info
-                    break
-                }
-            }
-            for(element in weatherArray){
-                if (info.provider.className == element.className && info.provider.packageName == element.packageName) {
-                    //we found one
-                    prefs.weather = info
-                    break
-                }
+        for(info in infos) {
+            when {
+                info.provider.className == "com.example.capaproject.WidgetMusic" -> prefs.music = widgetHolder(info, mAppWidgetHost.allocateAppWidgetId())
+                info.provider.className == "com.example.capaproject.WidgetClock" -> prefs.clock = widgetHolder(info, mAppWidgetHost.allocateAppWidgetId())
+                info.provider.className == "com.example.capaproject.WidgetCalendar" -> prefs.calendar = widgetHolder(info, mAppWidgetHost.allocateAppWidgetId())
+                info.provider.className == "com.example.capaproject.WidgetWeather" -> prefs.weather = widgetHolder(info, mAppWidgetHost.allocateAppWidgetId())
+                info.provider.className == "com.example.capaproject.WidgetNotes" -> prefs.notes = widgetHolder(info, mAppWidgetHost.allocateAppWidgetId())
+                info.provider.className == "com.example.capaproject.WidgetEmail" -> prefs.email = widgetHolder(info, mAppWidgetHost.allocateAppWidgetId())
+                info.provider.className == "com.example.capaproject.WidgetSearch" -> prefs.search = widgetHolder(info, mAppWidgetHost.allocateAppWidgetId())
             }
         }
-*/
-
     }
 
     //updates textbox context every 1000 milliseconds
-    //placeholder function to be used for testing
     private fun updateContext(){
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
-                text.text = stateHelper.getString()
-
-
-                /*
+                text.text = stateHelper.getString() // +", State: $currentState"
+/*
                 //If context has changed, updateuserstate
                 if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
                     guiHelper.updateUserState(resources.getString(R.string.stateDriving))
@@ -308,8 +213,8 @@ companion object{
                     guiHelper.updateUserState(resources.getString(R.string.stateDefault))
                     currentState = resources.getString(R.string.stateDefault)
                 }
+*/
 
-                */
             }
         }
     }
@@ -325,12 +230,56 @@ companion object{
         }
     }
     private fun createDefaultWidget(awpi : widgetHolder) {
-        val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
+        //val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
         val hostView = mAppWidgetHost.createView(
             this.applicationContext,
             awpi.id, awpi.awpi
         )
-        hostView.setAppWidget(appWidgetId, awpi.awpi)
+        Log.d("App",awpi.awpi.provider.packageName)
+        Log.d("App",awpi.awpi.provider.className)
+        hostView.setAppWidget(awpi.id, awpi.awpi)
+        if(awpi.awpi.provider.className=="com.example.capaproject.WidgetSearch"){
+            hostView.setOnClickListener {
+                widgetHolderToChange = prefs.getAttr("Search")
+                helperQueryUserPrefWidget("Search")
+            }
+        }
+        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetWeather"){
+            hostView.setOnClickListener {
+                widgetHolderToChange = prefs.getAttr("Weather")
+                helperQueryUserPrefWidget("Weather")
+            }
+        }
+        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetNotes"){
+            hostView.setOnClickListener {
+                widgetHolderToChange = prefs.getAttr("Notes")
+                helperQueryUserPrefWidget("Notes")
+            }
+        }
+        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetClock"){
+            hostView.setOnClickListener {
+                widgetHolderToChange = prefs.getAttr("Clock")
+                helperQueryUserPrefWidget("Clock")
+            }
+        }
+        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetMusic"){
+            hostView.setOnClickListener {
+                widgetHolderToChange = prefs.getAttr("Music")
+                helperQueryUserPrefWidget("Music")
+            }
+        }
+        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetCalendar"){
+            hostView.setOnClickListener {
+                widgetHolderToChange = prefs.getAttr("Calendar")
+                helperQueryUserPrefWidget("Calendar")
+            }
+        }
+        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetEmail"){
+            hostView.setOnClickListener {
+                widgetHolderToChange = prefs.getAttr("Email")
+                helperQueryUserPrefWidget("Email")
+            }
+        }
         hostView.setOnLongClickListener {
             Log.d("TAG", "long click createWidget")
             guiHelper.removeWidget(awpi)
@@ -360,6 +309,15 @@ companion object{
         pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         startActivityForResult(pickIntent, REQUEST_PICK_APPWIDGET)
     }
+    private fun compareToChange() : Boolean {
+        for(entry in guiHelper.stateMap){
+            if(entry.key.awpi.provider.className==widgetHolderToChange!!.awpi.provider.className){
+                return true
+            }
+        }
+        return false
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
@@ -367,51 +325,51 @@ companion object{
                 REQUEST_CREATE_APPWIDGET -> createWidget(data!!)
                 REQUEST_APPWIDGET_MUSIC -> {
                     prefs.music = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(awpiToChange)) {
-                        guiHelper.stateMap.remove(awpiToChange)
-                        //guiHelper.addWidget(prefs.music)
+                    if(compareToChange()) {
+                        guiHelper.removeAssociated(widgetHolderToChange)
+                        guiHelper.addWidget(prefs.music!!)
                     }
                 }
                 REQUEST_APPWIDGET_CLOCK -> {
                     prefs.clock = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(awpiToChange)) {
-                        guiHelper.stateMap.remove(awpiToChange)
-                        //guiHelper.addWidget(prefs.clock)
+                    if(compareToChange()) {
+                        guiHelper.removeAssociated(widgetHolderToChange)
+                        guiHelper.addWidget(prefs.clock!!)
                     }
                 }
                 REQUEST_APPWIDGET_SEARCH -> {
                     prefs.search = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(awpiToChange)) {
-                        guiHelper.stateMap.remove(awpiToChange)
-                        //guiHelper.addWidget(prefs.search)
+                    if(compareToChange()) {
+                        guiHelper.removeAssociated(widgetHolderToChange)
+                        guiHelper.addWidget(prefs.search!!)
                     }
                 }
                 REQUEST_APPWIDGET_EMAIL -> {
                     prefs.email = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(awpiToChange)) {
-                        guiHelper.stateMap.remove(awpiToChange)
-                        //guiHelper.addWidget(prefs.email)
+                    if(compareToChange()) {
+                        guiHelper.removeAssociated(widgetHolderToChange)
+                        guiHelper.addWidget(prefs.email!!)
                     }
                 }
                 REQUEST_APPWIDGET_CALENDAR -> {
                     prefs.calendar = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(awpiToChange)) {
-                        guiHelper.stateMap.remove(awpiToChange)
-                        //guiHelper.addWidget(prefs.calendar)
+                    if(compareToChange()) {
+                        guiHelper.removeAssociated(widgetHolderToChange)
+                        guiHelper.addWidget(prefs.calendar!!)
                     }
                 }
                 REQUEST_APPWIDGET_NOTES -> {
                     prefs.notes = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(awpiToChange)) {
-                        guiHelper.stateMap.remove(awpiToChange)
-                        //guiHelper.addWidget(prefs.notes)
+                    if(compareToChange()) {
+                        guiHelper.removeAssociated(widgetHolderToChange)
+                        guiHelper.addWidget(prefs.notes!!)
                     }
                 }
                 REQUEST_APPWIDGET_WEATHER -> {
                     prefs.weather = widgetPrefHelper(data!!)
-                    if(guiHelper.stateMap.contains(awpiToChange)) {
-                        guiHelper.stateMap.remove(awpiToChange)
-                        //guiHelper.addWidget(prefs.weather)
+                    if(compareToChange()) {
+                        guiHelper.removeAssociated(widgetHolderToChange)
+                        guiHelper.addWidget(prefs.weather!!)
                     }
                 }
 
@@ -510,7 +468,7 @@ companion object{
             builder.setTitle("Select widget to change default:")
                 .setItems(widgetList) { dialog, which ->
                     //remove old widget from stateMap
-                    awpiToChange = prefs.getAttr(widgetList[which])
+                    widgetHolderToChange = prefs.getAttr(widgetList[which])
                     helperQueryUserPrefWidget(widgetList[which])
                     dialog.dismiss()
                 }

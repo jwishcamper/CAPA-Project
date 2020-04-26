@@ -4,11 +4,12 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<widgetHolder, Double> = HashMap()
     //dummy state needed for initial load
-    var dummyState : CAPAhandler = defaultState(this,context,prefs,db)
+
+    var dummyState : CAPAhandler = defaultState(this,context,prefs)
 
     //List of possible states stores as CAPAhandler objects
-    var atWork : CAPAhandler = atWorkState(this,context,prefs,db)
-    var default : CAPAhandler = defaultState(this,context,prefs,db)
+    var atWork : CAPAhandler = atWorkState(this,context,prefs)
+    var default : CAPAhandler = defaultState(this,context,prefs)
 
     //current state will refer to one of the above possible state variables
     var currentState : CAPAhandler
@@ -58,6 +59,19 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
             else
                 currentState.updateGUI(stateMap)
         }
+    }
+    fun removeAssociated(wh : widgetHolder?){
+        val cls = wh!!.awpi.provider.className
+        var toRemove : widgetHolder? = null
+        for(entry in stateMap){
+            if(entry.key.awpi.provider.className==cls){
+                Log.d("capastate","Removed something")
+                toRemove=entry.key
+                break
+            }
+        }
+        if(toRemove != null)
+            stateMap.remove(toRemove)
     }
     fun removeWidget(name:widgetHolder){
         stateMap.remove(name)

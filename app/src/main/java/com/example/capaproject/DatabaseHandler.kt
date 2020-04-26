@@ -1,6 +1,5 @@
 package com.example.capaproject
 
-import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
@@ -9,18 +8,15 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
 import android.util.Log
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
-import com.example.capaproject.WorkReaderContract.WorkEntry
-import com.example.capaproject.DefaultReaderContract.DefaultEntry
-import com.example.capaproject.SchoolReaderContract.SchoolEntry
 import com.example.capaproject.UserPrefsContract.UserPrefsEntry
 import com.example.capaproject.UserHistoryContract.UserHistoryEntry
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 
 lateinit var mapper : ObjectMapper
+var stateArray = arrayOf("WorkState", "SchoolState", "DefaultState")
 
 private object SurveyReaderContract{
     object SurveyEntry : BaseColumns{
@@ -51,7 +47,7 @@ private object WorkReaderContract{
 
 private object DefaultReaderContract{
     object DefaultEntry : BaseColumns{
-        const val TABLE_NAME = "DefaultTable"
+        const val TABLE_NAME = "Default"
         const val COLUMN_WIDGETNAME = "WidgetName"
         const val COLUMN_WIDGETINFO = "WidgetInfo"
         const val COLUMN_WEIGHT = "Weight"
@@ -85,7 +81,7 @@ private const val USER_PREFS_CREATE_ENTRIES =
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${UserPrefsEntry.COLUMN_WIDGET} TEXT)"
 
-private const val WORK_CREATE_ENTRIES =
+/*private const val WORK_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${WorkEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${WorkEntry.COLUMN_WIDGETNAME} TEXT," +
@@ -106,6 +102,8 @@ private const val SCHOOL_CREATE_ENTRIES =
             "${SchoolEntry.COLUMN_WIDGETINFO} TEXT," +
             "${SchoolEntry.COLUMN_WEIGHT} DOUBLE)"
 
+ */
+
 private const val USER_HISTORY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${UserHistoryEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
@@ -115,9 +113,9 @@ private const val USER_HISTORY_CREATE_ENTRIES =
             "${UserHistoryEntry.COLUMN_LONGITUDE} DOUBLE)"
 
 private const val SURVEY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${SurveyEntry.TABLE_NAME}"
-private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${WorkEntry.TABLE_NAME}"
-private const val DEFAULT_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${DefaultEntry.TABLE_NAME}"
-private const val SCHOOL_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${SchoolEntry.TABLE_NAME}"
+private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS WorkState"
+private const val DEFAULT_DELETE_ENTRIES = "DROP TABLE IF EXISTS DefaultState"
+private const val SCHOOL_DELETE_ENTRIES = "DROP TABLE IF EXISTS SchoolState"
 private const val USER_PREFS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPrefsEntry.TABLE_NAME}"
 private const val USER_HISTORY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserHistoryEntry.TABLE_NAME}"
 
@@ -129,11 +127,11 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(SURVEY_CREATE_ENTRIES)
-        db.execSQL(WORK_CREATE_ENTRIES)
         db.execSQL(USER_PREFS_CREATE_ENTRIES)
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
-        db.execSQL(SCHOOL_CREATE_ENTRIES)
-        db.execSQL(DEFAULT_CREATE_ENTRIES)
+        //db.execSQL(WORK_CREATE_ENTRIES)
+        //db.execSQL(SCHOOL_CREATE_ENTRIES)
+        //db.execSQL(DEFAULT_CREATE_ENTRIES)
 
         mapper = jacksonObjectMapper()
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -145,7 +143,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.execSQL(WORK_DELETE_ENTRIES)
         db.execSQL(USER_PREFS_DELETE_ENTRIES)
         db.execSQL(SCHOOL_DELETE_ENTRIES)
-        //db.execSQL(USER_DATA_DELETE_ENTRIES)
         db.execSQL(DEFAULT_DELETE_ENTRIES)
         onCreate(db)
     }
@@ -159,10 +156,12 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Function to update user preferences for every state
-    private fun updateStatePrefs(prefs : UserPrefApps){
+    /*private fun updateStatePrefs(prefs : UserPrefApps){
         //updateWorkPrefs(prefs)
         updateDefaultPrefs(prefs)
     }
+
+     */
 
     //Function to update user preferences for Work state
     /*private fun updateWorkPrefs(prefs: UserPrefApps) {
@@ -207,7 +206,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.close()
     }*/
 
-    private fun updateDefaultPrefs(prefs: UserPrefApps) {
+    /*private fun updateDefaultPrefs(prefs: UserPrefApps) {
         val db = this.writableDatabase
         db.execSQL(DEFAULT_CREATE_ENTRIES)
 
@@ -221,6 +220,8 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         }
         db.close()
     }
+
+     */
 
     //Adds or updates user preferences in database
     private fun updateUserPrefsData(prefs: UserPrefApps){
@@ -273,10 +274,13 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Adds or updates work state info in database
-    private fun updateWorkData(map: HashMap<widgetHolder, Double>){
+    private fun updateStateData(stateName: String, map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
-        db.execSQL(WORK_DELETE_ENTRIES)
-        db.execSQL(WORK_CREATE_ENTRIES)
+        db.execSQL("DROP TABLE IF EXISTS $stateName")
+        db.execSQL("CREATE TABLE IF NOT EXISTS $stateName(" +
+                "WidgetName TEXT," +
+                "WidgetInfo TEXT," +
+                "Weight DOUBLE)")
 
         for(entry in map){
             //var selection = entry.key!!.awpi!!.provider.packageName
@@ -285,15 +289,15 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
             val mapperString = mapper.writeValueAsString(entry.key)
             val weight = entry.value
             val values = ContentValues().apply{
-                put(WorkEntry.COLUMN_WIDGETINFO, mapperString)
-                put(WorkEntry.COLUMN_WEIGHT, weight)
+                put("WidgetInfo", mapperString)
+                put("Weight", weight)
             }
-            db.insert(WorkEntry.TABLE_NAME, null, values)
+            db.insert(stateName, null, values)
         }
         db.close()
     }
 
-    private fun updateDefaultData(map: HashMap<widgetHolder, Double>){
+    /*private fun updateDefaultData(map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
         db.execSQL(DEFAULT_DELETE_ENTRIES)
         db.execSQL(DEFAULT_CREATE_ENTRIES)
@@ -311,12 +315,15 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.close()
     }
 
+     */
+
     //Updates state info in corresponding table using passed string to check which state
     fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
-        when(stateName){
-            context.resources.getString(R.string.stateWork) -> updateWorkData(map)
-            context.resources.getString(R.string.stateDefault) -> updateDefaultData(map)
-        }
+        /*when(stateName){
+            context.resources.getString(R.string.stateWork) -> updateWorkData(stateName, map)
+            //context.resources.getString(R.string.stateDefault) -> updateDefaultData(map)
+        }*/
+        updateStateData(stateName, map)
     }
 
     fun updateDatabaseSurvey(userProfile: UserProfile){
@@ -347,14 +354,16 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     //Uses passed string to get info from corresponding state table
-    fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
-        return when (stateName) {
+    fun getDatabaseState(stateName: String): HashMap<widgetHolder, Double> {
+        /*return when (stateName) {
             context.resources.getString(R.string.stateWork) -> getWorkData()
             else -> getDefaultData()
         }
+         */
+        return getStateData(stateName)
     }
 
-    private fun getDefaultData(): HashMap<widgetHolder, Double> {
+    /*private fun getDefaultData(): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
         db.execSQL(DEFAULT_CREATE_ENTRIES)
 
@@ -375,19 +384,24 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         return map
     }
 
-    //Gets work state info from database and returns as HashMap
-    private fun getWorkData(): HashMap<widgetHolder, Double> {
+     */
+
+    //Gets state info from database table based on stateName parameter and returns as HashMap
+    private fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
-        db.execSQL(WORK_CREATE_ENTRIES)
+        db.execSQL("CREATE TABLE IF NOT EXISTS $stateName(" +
+                "WidgetName TEXT," +
+                "WidgetInfo TEXT," +
+                "Weight DOUBLE)")
 
         val map: HashMap<widgetHolder, Double> = HashMap()
 
-        val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
+        val selectQuery = "SELECT * FROM $stateName"
         val cursor = db.rawQuery(selectQuery, null)
         cursor.moveToFirst()
         while(!cursor.isAfterLast){
-            val jsonString = cursor.getString(cursor.getColumnIndex(WorkEntry.COLUMN_WIDGETINFO))
-            val weight = cursor.getDouble(cursor.getColumnIndex(WorkEntry.COLUMN_WEIGHT))
+            val jsonString = cursor.getString(cursor.getColumnIndex("WidgetInfo"))
+            val weight = cursor.getDouble(cursor.getColumnIndex("Weight"))
             val appWidgetObject : widgetHolder = mapper.readValue(jsonString)
             map[appWidgetObject] = weight
             cursor.moveToNext()

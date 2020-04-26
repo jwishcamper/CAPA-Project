@@ -1,9 +1,5 @@
 package com.example.capaproject
 
-import android.appwidget.AppWidgetProviderInfo
-import android.content.ComponentName
-import android.util.Log
-
 class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<widgetHolder, Double> = HashMap()
@@ -56,7 +52,7 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
         if(newState != currentState) {
             currentState = newState
             //load the user prefs from database
-            stateMap = db.getStateData(getState())
+            stateMap = db.getDatabaseState(getState())
             if(stateMap.isEmpty())
                 currentState.updateGUI()
             else

@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">CAPAProject</string>
 
-    <string name="stateHome">Home</string>
-    <string name="stateWork">Work</string>
-    <string name="stateDriving">Driving</string>
-    <string name="stateSchool">School</string>
-    <string name="stateDefault">Default</string>
+    <string name="stateHome">HomeState</string>
+    <string name="stateWork">WorkState</string>
+    <string name="stateDriving">DrivingState</string>
+    <string name="stateSchool">SchoolState</string>
+    <string name="stateDefault">DefaultState</string>
 
     <string name="track">Track Activity</string>
     <string name="percentage">%1$d%%</string>

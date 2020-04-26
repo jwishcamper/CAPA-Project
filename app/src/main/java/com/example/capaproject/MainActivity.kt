@@ -28,8 +28,10 @@ import java.lang.Exception
 import android.content.res.Resources
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
 import java.util.ArrayList
+import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
 

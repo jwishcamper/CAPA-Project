@@ -1,5 +1,7 @@
 package com.example.capaproject
 
+import android.util.Log
+
 class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<widgetHolder, Double> = HashMap()

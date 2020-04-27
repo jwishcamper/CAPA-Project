@@ -390,7 +390,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
 
         val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
-        cursor!!.moveToFirst()
+        cursor.moveToFirst()
         while(!cursor.isAfterLast){
             val jsonString = cursor.getString(cursor.getColumnIndex(DefaultEntry.COLUMN_WIDGETINFO))
             val weight = cursor.getDouble(cursor.getColumnIndex(DefaultEntry.COLUMN_WEIGHT))
@@ -412,10 +412,10 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
 
         val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
-        cursor!!.moveToFirst()
+        cursor.moveToFirst()
         while(!cursor.isAfterLast){
-            val jsonString = cursor.getString(cursor.getColumnIndex("WidgetInfo"))
-            val weight = cursor.getDouble(cursor.getColumnIndex("Weight"))
+            val jsonString = cursor.getString(cursor.getColumnIndex(WorkEntry.COLUMN_WIDGETINFO))
+            val weight = cursor.getDouble(cursor.getColumnIndex(WorkEntry.COLUMN_WEIGHT))
             val appWidgetObject : widgetHolder = mapper.readValue(jsonString)
             map[appWidgetObject] = weight
             cursor.moveToNext()
@@ -486,12 +486,10 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         val cursor = db.rawQuery(selectQuery, null)
         cursor.moveToLast()
         //cursor.moveToFirst()
-        /*while(!cursor.isAfterLast){
-            if(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)) == stateName){
-                db.insert(UserHistoryEntry.TABLE_NAME, null, values)
-            }
+        while(!cursor.isAfterLast){
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
             cursor.moveToNext()
-        }*/
+        }
         cursor.close()
         db.close()
     }

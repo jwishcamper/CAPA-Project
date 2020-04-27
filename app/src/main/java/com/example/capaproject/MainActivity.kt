@@ -5,9 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.collections.HashMap
-import kotlin.concurrent.fixedRateTimer
 import android.app.Activity
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -32,7 +30,9 @@ import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import java.io.*
 import java.util.ArrayList
-
+import com.fasterxml.jackson.module.kotlin.*
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
 
@@ -102,6 +102,9 @@ companion object{
         //NUKE THE DATABASE!!!!!
         //databaseHandler.deleteData()
 
+        //NUKE USER HISTORY TABLE!!!!!
+        databaseHandler.clearUserHistory()
+
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
@@ -131,6 +134,7 @@ companion object{
         if (checkPermissionForLocation(this)) {
 
             //comment following line out for use on emulator
+
             //startLocationUpdates()
         }
         stateHelper = stateManager(this)
@@ -171,7 +175,6 @@ companion object{
 
     }
 
-
     //Search to set defaults if none exist
     private fun setDefaultProviders(){
         for(info in infos) {
@@ -189,7 +192,7 @@ companion object{
 
     //updates textbox context every 1000 milliseconds
     private fun updateContext(){
-        fixedRateTimer("timer",false,0,1000){
+        fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString() // +", State: $currentState"
 /*

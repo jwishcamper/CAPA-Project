@@ -28,6 +28,7 @@ import java.lang.Exception
 import android.content.res.Resources
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
 import java.util.ArrayList
 import com.fasterxml.jackson.module.kotlin.*
@@ -45,7 +46,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var userProfile : UserProfile
 
     //AppWidgetHost Variables
-    private var currentWidgetList = mutableListOf<widgetHolder>()
     private lateinit var mAppWidgetManager: AppWidgetManager
     private lateinit var mAppWidgetHost: WidgetHost
     private val APPWIDGET_HOST_ID = 1
@@ -170,7 +170,6 @@ companion object{
             "Calendar" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CALENDAR)
             "Notes" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_NOTES)
             "Weather" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_WEATHER)
-
         }
 
     }
@@ -194,7 +193,8 @@ companion object{
     private fun updateContext(){
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
-                text.text = stateHelper.getString() // +", State: $currentState"
+                text.text = stateHelper.getString()
+                //Following for auto-updating state - comment out for testing
 /*
                 //If context has changed, updateuserstate
                 if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
@@ -242,46 +242,13 @@ companion object{
         Log.d("App",awpi.awpi.provider.packageName)
         Log.d("App",awpi.awpi.provider.className)
         hostView.setAppWidget(awpi.id, awpi.awpi)
-        if(awpi.awpi.provider.className=="com.example.capaproject.WidgetSearch"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Search")
-                helperQueryUserPrefWidget("Search")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetWeather"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Weather")
-                helperQueryUserPrefWidget("Weather")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetNotes"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Notes")
-                helperQueryUserPrefWidget("Notes")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetClock"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Clock")
-                helperQueryUserPrefWidget("Clock")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetMusic"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Music")
-                helperQueryUserPrefWidget("Music")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetCalendar"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Calendar")
-                helperQueryUserPrefWidget("Calendar")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetEmail"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Email")
-                helperQueryUserPrefWidget("Email")
+
+        for(entry in resources.getStringArray(R.array.Widgets)) {
+            if(awpi.awpi.provider.className=="com.example.capaproject.Widget$entry"){
+                hostView.setOnClickListener {
+                    widgetHolderToChange = prefs.getAttr(entry)
+                    helperQueryUserPrefWidget(entry)
+                }
             }
         }
         hostView.setOnLongClickListener {
@@ -329,6 +296,7 @@ companion object{
                 REQUEST_CREATE_APPWIDGET -> createWidget(data!!)
                 REQUEST_APPWIDGET_MUSIC -> {
                     prefs.music = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.music!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.music!!)
@@ -336,6 +304,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_CLOCK -> {
                     prefs.clock = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.clock!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.clock!!)
@@ -343,6 +312,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_SEARCH -> {
                     prefs.search = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.search!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.search!!)
@@ -350,6 +320,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_EMAIL -> {
                     prefs.email = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.email!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.email!!)
@@ -357,6 +328,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_CALENDAR -> {
                     prefs.calendar = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.calendar!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.calendar!!)
@@ -364,6 +336,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_NOTES -> {
                     prefs.notes = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.notes!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.notes!!)
@@ -371,6 +344,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_WEATHER -> {
                     prefs.weather = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.weather!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.weather!!)

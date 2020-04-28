@@ -280,6 +280,8 @@ companion object{
         pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         startActivityForResult(pickIntent, REQUEST_PICK_APPWIDGET)
     }
+
+    //Helper function to test if the current state contains widgetHolderToChange's widget
     private fun compareToChange() : Boolean {
         for(entry in guiHelper.stateMap){
             if(entry.key.awpi.provider.className==widgetHolderToChange!!.awpi.provider.className){
@@ -289,6 +291,7 @@ companion object{
         return false
     }
 
+    //Called automatically when an activity request is received
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {

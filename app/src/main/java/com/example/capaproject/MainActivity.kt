@@ -28,6 +28,7 @@ import java.lang.Exception
 import android.content.res.Resources
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
 import java.util.ArrayList
@@ -37,13 +38,16 @@ import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
 
-    //laction functional vaiables
+    //location functional variables
+    val drivingFragment : DrivingFragment = DrivingFragment()
+    var drivingFlag = false
     lateinit var mLastLocation: Location
     private lateinit var mLocationRequest: LocationRequest
     private val INTERVAL: Long = 2000
     private val FASTEST_INTERVAL: Long = 1000
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
     lateinit var userProfile : UserProfile
+
 
     //AppWidgetHost Variables
     private lateinit var mAppWidgetManager: AppWidgetManager
@@ -135,7 +139,7 @@ companion object{
 
             //comment following line out for use on emulator
 
-            //startLocationUpdates()
+            startLocationUpdates()
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
@@ -194,6 +198,11 @@ companion object{
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString()
+
+                if(currentActivity == "In Vehicle" && !drivingFlag){
+                    activateDriving()
+                }
+
                 //Following for auto-updating state - comment out for testing
 /*
                 //If context has changed, updateuserstate
@@ -469,9 +478,36 @@ companion object{
             currentState = resources.getString(R.string.stateDefault)
             guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         }
+        else if(id == R.id.setDriving){
+            activateDriving()
+        }
 
         return super.onOptionsItemSelected(item)
     }
+
+    fun activateDriving(){
+        drivingFlag = true
+        Toast.makeText(this, "State Changed to Driving", Toast.LENGTH_LONG).show()
+
+        val ft = supportFragmentManager.beginTransaction()
+        ft.replace(R.id.fragmentM, drivingFragment)
+        ft.commit()
+
+        //updating fragment size
+        findViewById<View>(R.id.fragmentM).layoutParams.height = 980
+    }
+
+    fun surpressDriving(){
+        drivingFlag = false
+        val blankFragment : Fragment = BlankFragment()
+        val ft = supportFragmentManager.beginTransaction()
+        ft.replace(R.id.fragmentM, blankFragment)
+        ft.commit()
+
+        //updating fragment size
+        findViewById<View>(R.id.fragmentM).layoutParams.height = 0
+    }
+
 
     private val mLocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
@@ -485,6 +521,17 @@ companion object{
     fun onLocationChanged(location: Location){
         //new location has now been determined
         mLastLocation = location
+
+        //if driving fragment is displayed
+        if (findViewById<View>(R.id.fragmentM).layoutParams.height != 0) {
+            drivingFragment.locationChanged(location)
+        }
+
+        //update map
+        var zoomLevel = 16.0f
+        //val latLng = LatLng(mLastLocation.latitude, mLastLocation.longitude)
+        //map?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel))
+
 
         //userProfile = databaseHandler.getSurvey()
         //checking if you are close to one of you survey addresses

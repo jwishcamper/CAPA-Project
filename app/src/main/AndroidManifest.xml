@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.capaproject">
 
+    <!--
+         The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
+         Google Maps Android API v2, but you must specify either coarse or fine
+         location permissions for the 'MyLocation' functionality.
+    -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
@@ -20,7 +25,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <receiver android:name=".WidgetNotes" android:label="CAPA Notes">
+
+        <!--
+             The API key for Google Maps-based APIs is defined as a string resource.
+             (See the file "res/values/google_maps_api.xml").
+             Note that the API key is linked to the encryption key used to sign the APK.
+             You need a different API key for each encryption key, including the release key that is used to
+             sign the APK for publishing.
+             You can define the keys for the debug and release targets in src/debug/ and src/release/.
+        -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
+        <activity
+            android:name=".MapsFragment"
+            android:label="@string/title_activity_maps_fragment"></activity>
+        <activity android:name=".DrivingFragment" />
+
+        <receiver
+            android:name=".WidgetNotes"
+            android:label="CAPA Notes">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -29,7 +54,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_notes_info" />
         </receiver>
-        <receiver android:name=".WidgetCalendar" android:label="CAPA Calendar">
+        <receiver
+            android:name=".WidgetCalendar"
+            android:label="CAPA Calendar">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -38,7 +65,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_calendar_info" />
         </receiver>
-        <receiver android:name=".WidgetEmail" android:label="CAPA Email">
+        <receiver
+            android:name=".WidgetEmail"
+            android:label="CAPA Email">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -47,7 +76,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_email_info" />
         </receiver>
-        <receiver android:name=".WidgetSearch" android:label="CAPA Search">
+        <receiver
+            android:name=".WidgetSearch"
+            android:label="CAPA Search">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -56,7 +87,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_search_info" />
         </receiver>
-        <receiver android:name=".WidgetWeather" android:label="CAPA Weather">
+        <receiver
+            android:name=".WidgetWeather"
+            android:label="CAPA Weather">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -65,7 +98,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_weather_info" />
         </receiver>
-        <receiver android:name=".WidgetClock" android:label="CAPA Clock">
+        <receiver
+            android:name=".WidgetClock"
+            android:label="CAPA Clock">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -74,7 +109,9 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/clock_widget_info" />
         </receiver>
-        <receiver android:name=".WidgetMusic" android:label="CAPA Music">
+        <receiver
+            android:name=".WidgetMusic"
+            android:label="CAPA Music">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

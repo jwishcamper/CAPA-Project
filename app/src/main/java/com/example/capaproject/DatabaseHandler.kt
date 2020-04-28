@@ -35,33 +35,6 @@ private object UserHistoryContract{
     }
 }
 
-private object WorkReaderContract{
-    object WorkEntry : BaseColumns{
-        const val TABLE_NAME = "Work"
-        const val COLUMN_WIDGETNAME = "WidgetName"
-        const val COLUMN_WIDGETINFO = "WidgetInfo"
-        const val COLUMN_WEIGHT = "Weight"
-    }
-}
-
-private object DefaultReaderContract{
-    object DefaultEntry : BaseColumns{
-        const val TABLE_NAME = "Default"
-        const val COLUMN_WIDGETNAME = "WidgetName"
-        const val COLUMN_WIDGETINFO = "WidgetInfo"
-        const val COLUMN_WEIGHT = "Weight"
-    }
-}
-
-private object SchoolReaderContract{
-    object SchoolEntry : BaseColumns{
-        const val TABLE_NAME = "School"
-        const val COLUMN_WIDGETNAME = "WidgetName"
-        const val COLUMN_WIDGETINFO = "WidgetInfo"
-        const val COLUMN_WEIGHT = "Weight"
-    }
-}
-
 private object UserPrefsContract{
     object UserPrefsEntry : BaseColumns{
         const val TABLE_NAME = "UserPrefs"
@@ -79,26 +52,6 @@ private const val USER_PREFS_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${UserPrefsEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${UserPrefsEntry.COLUMN_WIDGET} TEXT)"
-
-/*private const val WORK_CREATE_ENTRIES =
-    "CREATE TABLE IF NOT EXISTS ${WorkEntry.TABLE_NAME} (" +
-            "${BaseColumns._ID} INTEGER PRIMARY KEY," +
-            "${WorkEntry.COLUMN_WIDGETNAME} TEXT," +
-            "${WorkEntry.COLUMN_WIDGETINFO} TEXT," +
-            "${WorkEntry.COLUMN_WEIGHT} DOUBLE)"
-private const val DEFAULT_CREATE_ENTRIES =
-    "CREATE TABLE IF NOT EXISTS ${DefaultEntry.TABLE_NAME} (" +
-            "${BaseColumns._ID} INTEGER PRIMARY KEY," +
-            "${DefaultEntry.COLUMN_WIDGETNAME} TEXT," +
-            "${DefaultEntry.COLUMN_WIDGETINFO} TEXT," +
-            "${DefaultEntry.COLUMN_WEIGHT} DOUBLE)"
-private const val SCHOOL_CREATE_ENTRIES =
-    "CREATE TABLE IF NOT EXISTS ${SchoolEntry.TABLE_NAME} (" +
-            "${BaseColumns._ID} INTEGER PRIMARY KEY," +
-            "${SchoolEntry.COLUMN_WIDGETNAME} TEXT," +
-            "${SchoolEntry.COLUMN_WIDGETINFO} TEXT," +
-            "${SchoolEntry.COLUMN_WEIGHT} DOUBLE)"
- */
 
 private const val USER_HISTORY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${UserHistoryEntry.TABLE_NAME} (" +
@@ -125,9 +78,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.execSQL(SURVEY_CREATE_ENTRIES)
         db.execSQL(USER_PREFS_CREATE_ENTRIES)
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
-        //db.execSQL(WORK_CREATE_ENTRIES)
-        //db.execSQL(SCHOOL_CREATE_ENTRIES)
-        //db.execSQL(DEFAULT_CREATE_ENTRIES)
 
         mapper = jacksonObjectMapper()
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -179,59 +129,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         updateUserPrefsData(prefs)
     }
 
-    //Function to update user preferences for every state
-    /*private fun updateStatePrefs(prefs : UserPrefApps){
-        //updateWorkPrefs(prefs)
-        updateDefaultPrefs(prefs)
-    }
-     */
-
-    //Function to update user preferences for Work state
-    /*private fun updateWorkPrefs(prefs: UserPrefApps) {
-        val db = this.writableDatabase
-        db.execSQL(WORK_CREATE_ENTRIES)
-        val clock = prefs.getAttr("Clock")
-        val music = prefs.getAttr("Music")
-        val clockPKG = clock.packageName
-        val clockCLS = clock.className
-        //var selection = "${WorkEntry.COLUMN_CLASS}=${clockCLS}"
-        db.query(WorkEntry.TABLE_NAME, null, "${WorkEntry.COLUMN_CLASS}=${clockCLS}", null, null, null, null, null)
-        val clockValues = ContentValues().apply{
-            put(WorkEntry.COLUMN_PACKAGE, clockPKG)
-            put(WorkEntry.COLUMN_CLASS, clockCLS)
-        }
-        db.update(WorkEntry.TABLE_NAME, clockValues, null, null)
-        val musicPKG = music.packageName
-        val musicCLS = music.className
-        //selection = "SELECT * FROM ${WorkEntry.TABLE_NAME} WHERE ${WorkEntry.COLUMN_CLASS}=${musicCLS}"
-        db.query(WorkEntry.TABLE_NAME, null, "${WorkEntry.COLUMN_CLASS}=${musicCLS}", null, null, null, null, null)
-        val musicValues = ContentValues().apply{
-            put(WorkEntry.COLUMN_PACKAGE, musicPKG)
-            put(WorkEntry.COLUMN_CLASS, musicCLS)
-        }
-        db.update(WorkEntry.TABLE_NAME, musicValues, null, null)
-        val selectQuery = "SELECT * FROM ${WorkEntry.TABLE_NAME}"
-        val cursor = db.rawQuery(selectQuery, null)
-        cursor.moveToFirst()
-        while(!cursor.isAfterLast){
-            //Log.d("test", cursor.getString(cursor.getColumnIndex(WorkEntry.COLUMN_CLASS)))
-        }
-        db.close()
-    }*/
-
-    /*private fun updateDefaultPrefs(prefs: UserPrefApps) {
-        val db = this.writableDatabase
-        db.execSQL(DEFAULT_CREATE_ENTRIES)
-        val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
-        val cursor = db.rawQuery(selectQuery, null)
-        cursor.moveToFirst()
-        while(!cursor.isAfterLast){
-            //Log.d("test", cursor.getString(cursor.getColumnIndex(SchoolEntry.COLUMN_CLASS)))
-        }
-        db.close()
-    }
-     */
-
     //Adds or updates user preferences in database
     private fun updateUserPrefsData(prefs: UserPrefApps){
         val db = this.writableDatabase
@@ -246,8 +143,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.insert(UserPrefsEntry.TABLE_NAME, null, values)
 
         db.close()
-
-        //updateStatePrefs(prefs)
     }
 
     fun getUserPrefs(): UserPrefApps{
@@ -266,14 +161,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         while(!cursor.isAfterLast){
             val jsonString = cursor.getString(cursor.getColumnIndex("Widget"))
             prefs = mapper.readValue(jsonString)
-            /*when {
-                cursor.getString(cursor.getColumnIndex("Widget")) == "Clock" -> prefs.clock = compName
-                cursor.getString(cursor.getColumnIndex("Widget")) == "Music" -> prefs.music = compName
-                else -> {
-                    prefs.clock = ComponentName("", "")
-                    prefs.music = ComponentName("", "")
-                }
-            }*/
             cursor.moveToNext()
         }
         cursor.close()
@@ -292,9 +179,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
                 "Weight DOUBLE)")
 
         for(entry in map){
-            //var selection = entry.key!!.awpi!!.provider.packageName
-            //selection = selection.replace(".", "")
-            //Log.d("pkg", selection)
             val mapperString = mapper.writeValueAsString(entry.key)
             val weight = entry.value
             val values = ContentValues().apply{
@@ -305,30 +189,8 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         }
         db.close()
     }
-
-    /*private fun updateDefaultData(map: HashMap<widgetHolder, Double>){
-        val db = this.writableDatabase
-        db.execSQL(DEFAULT_DELETE_ENTRIES)
-        db.execSQL(DEFAULT_CREATE_ENTRIES)
-        for(entry in map){
-            val mapperString = mapper.writeValueAsString(entry.key)
-            val weight = entry.value
-            val values = ContentValues().apply{
-                put(DefaultEntry.COLUMN_WIDGETINFO, mapperString)
-                put(DefaultEntry.COLUMN_WEIGHT, weight)
-            }
-            db.insert(DefaultEntry.TABLE_NAME, null, values)
-        }
-        db.close()
-    }
-     */
-
     //Updates state info in corresponding table using passed string to check which state
     fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
-        /*when(stateName){
-            context.resources.getString(R.string.stateWork) -> updateWorkData(stateName, map)
-            //context.resources.getString(R.string.stateDefault) -> updateDefaultData(map)
-        }*/
         updateStateData(stateName, map)
     }
 
@@ -361,34 +223,8 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
 
     //Uses passed string to get info from corresponding state table
     fun getDatabaseState(stateName: String): HashMap<widgetHolder, Double> {
-        /*return when (stateName) {
-            context.resources.getString(R.string.stateWork) -> getWorkData()
-            else -> getDefaultData()
-        }
-         */
         return getStateData(stateName)
     }
-
-    /*private fun getDefaultData(): HashMap<widgetHolder, Double> {
-        val db = this.readableDatabase
-        db.execSQL(DEFAULT_CREATE_ENTRIES)
-        val map: HashMap<widgetHolder, Double> = HashMap()
-        val selectQuery = "SELECT * FROM ${DefaultEntry.TABLE_NAME}"
-        val cursor = db.rawQuery(selectQuery, null)
-        cursor.moveToFirst()
-        while(!cursor.isAfterLast){
-            val jsonString = cursor.getString(cursor.getColumnIndex(DefaultEntry.COLUMN_WIDGETINFO))
-            val weight = cursor.getDouble(cursor.getColumnIndex(DefaultEntry.COLUMN_WEIGHT))
-            val appWidgetObject : widgetHolder = mapper.readValue(jsonString)
-            map[appWidgetObject] = weight
-            cursor.moveToNext()
-        }
-        cursor.close()
-        db.close()
-        return map
-    }
-     */
-
     //Gets state info from database table based on stateName parameter and returns as HashMap
     private fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase

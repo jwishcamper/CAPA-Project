@@ -1,14 +1,14 @@
 package com.example.capaproject
 
-import android.appwidget.AppWidgetProviderInfo
-import android.content.ComponentName
 import android.util.Log
 
 class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserPrefApps) {
     //this hashmap stores the current widgets in form ComponentName : Double; the doubt is the weight of the widget
     var stateMap : HashMap<widgetHolder, Double> = HashMap()
     //dummy state needed for initial load
+
     var dummyState : CAPAhandler = defaultState(this,context,prefs)
+
     //List of possible states stores as CAPAhandler objects
     var atWork : CAPAhandler = atWorkState(this,context,prefs)
     var default : CAPAhandler = defaultState(this,context,prefs)
@@ -23,15 +23,20 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
     //call this from mainActivity to change the user state and update GUI
     fun updateUserState(newState : String){
 
+        var userHistory = UserHistory()
+
+
         //save hashmap for current state to database
         if(stateMap.isNotEmpty())
             db.updateDatabaseState(getState(),stateMap)
+
         when(newState){
             in context.resources.getString(R.string.stateWork) -> setState(atWork)
             else -> setState(default)
         }
 
         //use following line when location turned on:
+
         //val uh = UserHistory(context.stateHelper.getDateTime(),getState(),context.mLastLocation.latitude,context.mLastLocation.longitude)
 
         //use the following line for use on emulator:
@@ -39,6 +44,10 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
 
         db.updateUserHistory(uh)
 
+        //use the following line for use on emulator:
+        //userHistory.dateTime = context.stateHelper.getDateTime()
+        //userHistory.userState = getState()
+        //db.updateUserHistory(userHistory)
     }
     //helper for updateUserState
     //if state has changed, build GUI based on hashmap. if hashmap is empty, build based on default.
@@ -46,7 +55,7 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
         if(newState != currentState) {
             currentState = newState
             //load the user prefs from database
-            stateMap = db.getStateData(getState())
+            stateMap = db.getDatabaseState(getState())
             if(stateMap.isEmpty())
                 currentState.updateGUI()
             else

@@ -5,9 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.collections.HashMap
-import kotlin.concurrent.fixedRateTimer
 import android.app.Activity
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -30,14 +28,19 @@ import java.lang.Exception
 import android.content.res.Resources
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
 import java.util.ArrayList
-import com.jmedeisis.draglinearlayout.DragLinearLayout;
-
+import com.fasterxml.jackson.module.kotlin.*
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
 
-    //laction functional vaiables
+    //location functional variables
+    val drivingFragment : DrivingFragment = DrivingFragment()
+    var drivingFlag = false
     lateinit var mLastLocation: Location
     private lateinit var mLocationRequest: LocationRequest
     private val INTERVAL: Long = 2000
@@ -45,8 +48,8 @@ class MainActivity : AppCompatActivity() {
     private var mFusedLocationProviderClient: FusedLocationProviderClient? = null
     lateinit var userProfile : UserProfile
 
-    //
-    private var currentWidgetList = mutableListOf<widgetHolder>()
+
+    //AppWidgetHost Variables
     private lateinit var mAppWidgetManager: AppWidgetManager
     private lateinit var mAppWidgetHost: WidgetHost
     private val APPWIDGET_HOST_ID = 1
@@ -62,7 +65,7 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var infos : List<AppWidgetProviderInfo>
 
-    private lateinit var mainlayout: DragLinearLayout
+    private lateinit var mainlayout: ViewGroup
 
     //helper object to determine user state
     lateinit var stateHelper: stateManager
@@ -87,7 +90,6 @@ companion object{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         mainlayout = findViewById(R.id.mainLayout)
 
         //make sure mLastLocation is not null
@@ -102,12 +104,21 @@ companion object{
         userProfile = databaseHandler.getSurvey()
 
         //NUKE THE DATABASE!!!!!
-        //databaseHandler.deleteData()
+        databaseHandler.deleteData()
+
+        //NUKE USER HISTORY TABLE!!!!!
+        databaseHandler.clearUserHistory()
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
+
+/*
+        mapper = jacksonObjectMapper()
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
+*/
 
         //Log.d("hostView",hostViewReloaded.awpi.provider.packageName)
         prefs = UserPrefApps()
@@ -127,7 +138,8 @@ companion object{
         if (checkPermissionForLocation(this)) {
 
             //comment following line out for use on emulator
-            //startLocationUpdates()
+
+            startLocationUpdates()
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
@@ -162,11 +174,9 @@ companion object{
             "Calendar" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_CALENDAR)
             "Notes" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_NOTES)
             "Weather" -> startActivityForResult(pickIntent, REQUEST_APPWIDGET_WEATHER)
-
         }
 
     }
-
 
     //Search to set defaults if none exist
     private fun setDefaultProviders(){
@@ -184,14 +194,17 @@ companion object{
     }
 
     //updates textbox context every 1000 milliseconds
-    //placeholder function to be used for testing
     private fun updateContext(){
-        fixedRateTimer("timer",false,0,1000){
+        fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString()
 
-                //commented out for testing puroses
-                /*
+                if(currentActivity == "In Vehicle" && !drivingFlag){
+                    activateDriving()
+                }
+
+                //Following for auto-updating state - comment out for testing
+/*
                 //If context has changed, updateuserstate
                 if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
                     guiHelper.updateUserState(resources.getString(R.string.stateDriving))
@@ -213,8 +226,8 @@ companion object{
                     guiHelper.updateUserState(resources.getString(R.string.stateDefault))
                     currentState = resources.getString(R.string.stateDefault)
                 }
+*/
 
-                */
             }
         }
     }
@@ -229,57 +242,22 @@ companion object{
             childCount--
         }
     }
-
     private fun createDefaultWidget(awpi : widgetHolder) {
         //val appWidgetId = mAppWidgetHost.allocateAppWidgetId()
         val hostView = mAppWidgetHost.createView(
             this.applicationContext,
             awpi.id, awpi.awpi
         )
-
         Log.d("App",awpi.awpi.provider.packageName)
         Log.d("App",awpi.awpi.provider.className)
         hostView.setAppWidget(awpi.id, awpi.awpi)
-        if(awpi.awpi.provider.className=="com.example.capaproject.WidgetSearch"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Search")
-                helperQueryUserPrefWidget("Search")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetWeather"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Weather")
-                helperQueryUserPrefWidget("Weather")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetNotes"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Notes")
-                helperQueryUserPrefWidget("Notes")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetClock"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Clock")
-                helperQueryUserPrefWidget("Clock")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetMusic"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Music")
-                helperQueryUserPrefWidget("Music")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetCalendar"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Calendar")
-                helperQueryUserPrefWidget("Calendar")
-            }
-        }
-        else if(awpi.awpi.provider.className=="com.example.capaproject.WidgetEmail"){
-            hostView.setOnClickListener {
-                widgetHolderToChange = prefs.getAttr("Email")
-                helperQueryUserPrefWidget("Email")
+
+        for(entry in resources.getStringArray(R.array.Widgets)) {
+            if(awpi.awpi.provider.className=="com.example.capaproject.Widget$entry"){
+                hostView.setOnClickListener {
+                    widgetHolderToChange = prefs.getAttr(entry)
+                    helperQueryUserPrefWidget(entry)
+                }
             }
         }
         hostView.setOnLongClickListener {
@@ -289,8 +267,8 @@ companion object{
             true
         }
 
-        mainlayout.addDragView(hostView, hostView)
 
+        mainlayout.addView(hostView)
     }
     private fun createWidget(data: Intent) {
         val extras = data.extras
@@ -311,6 +289,8 @@ companion object{
         pickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         startActivityForResult(pickIntent, REQUEST_PICK_APPWIDGET)
     }
+
+    //Helper function to test if the current state contains widgetHolderToChange's widget
     private fun compareToChange() : Boolean {
         for(entry in guiHelper.stateMap){
             if(entry.key.awpi.provider.className==widgetHolderToChange!!.awpi.provider.className){
@@ -320,6 +300,7 @@ companion object{
         return false
     }
 
+    //Called automatically when an activity request is received
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
@@ -327,6 +308,7 @@ companion object{
                 REQUEST_CREATE_APPWIDGET -> createWidget(data!!)
                 REQUEST_APPWIDGET_MUSIC -> {
                     prefs.music = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.music!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.music!!)
@@ -334,6 +316,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_CLOCK -> {
                     prefs.clock = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.clock!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.clock!!)
@@ -341,6 +324,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_SEARCH -> {
                     prefs.search = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.search!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.search!!)
@@ -348,6 +332,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_EMAIL -> {
                     prefs.email = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.email!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.email!!)
@@ -355,6 +340,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_CALENDAR -> {
                     prefs.calendar = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.calendar!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.calendar!!)
@@ -362,6 +348,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_NOTES -> {
                     prefs.notes = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.notes!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.notes!!)
@@ -369,6 +356,7 @@ companion object{
                 }
                 REQUEST_APPWIDGET_WEATHER -> {
                     prefs.weather = widgetPrefHelper(data!!)
+                    databaseHandler.updatePrefsForAllStates(widgetHolderToChange!!,prefs.weather!!)
                     if(compareToChange()) {
                         guiHelper.removeAssociated(widgetHolderToChange)
                         guiHelper.addWidget(prefs.weather!!)
@@ -435,7 +423,7 @@ companion object{
 
     private fun removeWidget(hostView: AppWidgetHostView) {
         //println(hostView.appWidgetId)
-        mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)
+        //mAppWidgetHost.deleteAppWidgetId(hostView.appWidgetId)
         mainlayout.removeView(hostView)
     }
     internal fun addEmptyData(pickIntent: Intent) {
@@ -490,9 +478,36 @@ companion object{
             currentState = resources.getString(R.string.stateDefault)
             guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         }
+        else if(id == R.id.setDriving){
+            activateDriving()
+        }
 
         return super.onOptionsItemSelected(item)
     }
+
+    fun activateDriving(){
+        drivingFlag = true
+        Toast.makeText(this, "State Changed to Driving", Toast.LENGTH_LONG).show()
+
+        val ft = supportFragmentManager.beginTransaction()
+        ft.replace(R.id.fragmentM, drivingFragment)
+        ft.commit()
+
+        //updating fragment size
+        findViewById<View>(R.id.fragmentM).layoutParams.height = 980
+    }
+
+    fun surpressDriving(){
+        drivingFlag = false
+        val blankFragment : Fragment = BlankFragment()
+        val ft = supportFragmentManager.beginTransaction()
+        ft.replace(R.id.fragmentM, blankFragment)
+        ft.commit()
+
+        //updating fragment size
+        findViewById<View>(R.id.fragmentM).layoutParams.height = 0
+    }
+
 
     private val mLocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
@@ -506,6 +521,17 @@ companion object{
     fun onLocationChanged(location: Location){
         //new location has now been determined
         mLastLocation = location
+
+        //if driving fragment is displayed
+        if (findViewById<View>(R.id.fragmentM).layoutParams.height != 0) {
+            drivingFragment.locationChanged(location)
+        }
+
+        //update map
+        var zoomLevel = 16.0f
+        //val latLng = LatLng(mLastLocation.latitude, mLastLocation.longitude)
+        //map?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoomLevel))
+
 
         //userProfile = databaseHandler.getSurvey()
         //checking if you are close to one of you survey addresses

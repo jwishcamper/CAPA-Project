@@ -35,19 +35,13 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
             else -> setState(default)
         }
 
-        //use following line when location turned on:
-
-        //val uh = UserHistory(context.stateHelper.getDateTime(),getState(),context.mLastLocation.latitude,context.mLastLocation.longitude)
-
-        //use the following line for use on emulator:
-        val uh = UserHistory(context.stateHelper.getDateTime(),getState(),0.0,0.0)
+        val uh : UserHistory = if(context.useEmulator)
+            UserHistory(context.stateHelper.getDateTime(),getState(),0.0,0.0)
+        else
+            UserHistory(context.stateHelper.getDateTime(),getState(),context.mLastLocation.latitude,context.mLastLocation.longitude)
 
         db.updateUserHistory(uh)
 
-        //use the following line for use on emulator:
-        //userHistory.dateTime = context.stateHelper.getDateTime()
-        //userHistory.userState = getState()
-        //db.updateUserHistory(userHistory)
     }
     //helper for updateUserState
     //if state has changed, build GUI based on hashmap. if hashmap is empty, build based on default.

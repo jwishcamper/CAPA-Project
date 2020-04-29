@@ -38,6 +38,15 @@ import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
 
+    //Update this boolean variable depending on use for emulator or physical device
+    val useEmulator = false
+
+    //Update this boolean to "true" if you want state to change automatically with location
+    private val autoUpdateState = false
+
+
+
+
     //location functional variables
     val drivingFragment : DrivingFragment = DrivingFragment()
     var drivingFlag = false
@@ -76,8 +85,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var databaseHandler : DatabaseHandler
 
-    //used for testing serialize objects
-    //private lateinit var mapper : ObjectMapper
 
 
     //currentActivity is current most probable activity
@@ -114,32 +121,23 @@ companion object{
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
-/*
-        mapper = jacksonObjectMapper()
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
-*/
-
-        //Log.d("hostView",hostViewReloaded.awpi.provider.packageName)
         prefs = UserPrefApps()
 
-        //Load preferences from database here
+        //Load preferences from database
         prefs = databaseHandler.getUserPrefs()
 
         //If user has never set prefs, set them
         if(prefs.isEmpty())
             setDefaultProviders()
 
-
         //starts location updates
         mLocationRequest = LocationRequest()
 
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        //Start location updates if relevant
         if (checkPermissionForLocation(this)) {
-
-            //comment following line out for use on emulator
-
-            startLocationUpdates()
+            if(!useEmulator)
+                startLocationUpdates()
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
@@ -199,35 +197,34 @@ companion object{
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString()
 
-                if(currentActivity == "In Vehicle" && !drivingFlag){
-                    activateDriving()
-                }
+                if(autoUpdateState) {
+                    if (currentActivity == "In Vehicle" && !drivingFlag) {
+                        activateDriving()
+                    }
 
-                //Following for auto-updating state - comment out for testing
-/*
-                //If context has changed, updateuserstate
-                if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateDriving))
-                    currentState = resources.getString(R.string.stateDriving)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateSchool))
-                    currentState = resources.getString(R.string.stateSchool)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateWork))
-                    currentState = resources.getString(R.string.stateWork)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateHome))
-                    currentState = resources.getString(R.string.stateHome)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateDefault))
-                    currentState = resources.getString(R.string.stateDefault)
-                }
-*/
+                    //If context has changed, updateuserstate
+                    if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateDriving))
+                        currentState = resources.getString(R.string.stateDriving)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateSchool))
+                        currentState = resources.getString(R.string.stateSchool)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateWork))
+                        currentState = resources.getString(R.string.stateWork)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateHome))
+                        currentState = resources.getString(R.string.stateHome)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+                        currentState = resources.getString(R.string.stateDefault)
+                    }
 
+                }
             }
         }
     }

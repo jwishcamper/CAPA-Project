@@ -104,7 +104,7 @@ companion object{
         userProfile = databaseHandler.getSurvey()
 
         //NUKE THE DATABASE!!!!!
-        //databaseHandler.deleteData()
+        databaseHandler.deleteData()
 
         //NUKE USER HISTORY TABLE!!!!!
         databaseHandler.clearUserHistory()

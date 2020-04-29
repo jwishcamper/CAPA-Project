@@ -1,27 +1,21 @@
 package com.example.capaproject
 
-import android.content.ComponentName
-import java.io.Serializable
-
-
-
 
 class UserPrefApps{
-    private val emptyCN = ComponentName("","")
-    var clock = ComponentName("","")
-    var music = ComponentName("","")
-    var search = ComponentName("","")
-    var email = ComponentName("","")
-    var calendar = ComponentName("","")
-    var notes = ComponentName("","")
-    var weather = ComponentName("","")
+    var clock : widgetHolder? = null
+    var music : widgetHolder? = null
+    var search : widgetHolder? = null
+    var email : widgetHolder? = null
+    var calendar : widgetHolder? = null
+    var notes : widgetHolder? = null
+    var weather : widgetHolder? = null
 
     fun isEmpty() : Boolean {
-        if(clock.className=="" && music.className =="" && search.className =="" && email.className =="" && calendar.className =="" && notes.className =="" && weather.className =="")
+        if(clock==null && music==null && search==null && email==null && calendar==null && notes==null && weather==null)
             return true
         return false
     }
-    fun getAttr(name : String) : ComponentName {
+    fun getAttr(name : String) : widgetHolder? {
         return when(name) {
             in "Clock" -> clock
             "Music" -> music
@@ -30,7 +24,7 @@ class UserPrefApps{
             "Calendar" -> calendar
             "Notes" -> notes
             "Weather" -> weather
-            else -> emptyCN
+            else -> null
         }
     }
 }

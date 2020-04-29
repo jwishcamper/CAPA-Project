@@ -138,41 +138,29 @@ class Survey() : AppCompatActivity() {
         val day = daySpin.selectedItem.toString()
         val yr = yearSpin.selectedItem.toString()
 
-        //checking if home address exists
+        //checking if address exists
+        var trys : String = work
+
         try {
-            var tries = getLocationFromAddress(this, home)
+
+            if(work != "") {
+                trys = work
+                var tries = getLocationFromAddress(this, work)
+            }
+            if(school != "") {
+                trys = school
+                var tries = getLocationFromAddress(this, school)
+            }
+            if(home != "") {
+                trys = home
+                var tries = getLocationFromAddress(this, home)
+            }
         }
         catch (e: Exception){
-            Toast.makeText(applicationContext,"Home Address Does Not Exist",Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext,"$trys Address Does Not Exist",Toast.LENGTH_SHORT).show()
             return
         }
 
-        //checking if work address exists
-        try {
-            var tries = getLocationFromAddress(this, work)
-        }
-        catch (e: Exception){
-            Toast.makeText(applicationContext,"Work Address Does Not Exist",Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        //checking if school address exists
-        try {
-            var tries = getLocationFromAddress(this, school)
-        }
-        catch (e: Exception){
-            Toast.makeText(applicationContext,"School Address Does Not Exist",Toast.LENGTH_SHORT).show()
-            return
-        }
-
-/*
-        val map = HashMap<String, String>()
-        map["Home"] = home
-        map["Work"] = work
-        map["School"] = school
-        map["Gender"] = gender
-        map["BirthDay"] = "$month/$day/$yr"
-*/
         //making profile object for information
 
         val profileObj = UserProfile(home, work, school, gender, "$month/$day/$yr")

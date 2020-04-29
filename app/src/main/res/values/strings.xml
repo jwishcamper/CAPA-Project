@@ -1,6 +1,21 @@
 <resources>
     <string name="app_name">CAPAProject</string>
 
+    <string name="stateHome">HomeState</string>
+    <string name="stateWork">WorkState</string>
+    <string name="stateDriving">DrivingState</string>
+    <string name="stateSchool">SchoolState</string>
+    <string name="stateDefault">DefaultState</string>
+
+    <string-array name="States">
+        <item>HomeState</item>
+        <item>WorkState</item>
+        <item>DrivingState</item>
+        <item>SchoolState</item>
+        <item>DefaultState</item>
+
+    </string-array>
+
     <string name="track">Track Activity</string>
     <string name="percentage">%1$d%%</string>
     <string name="bicycle">On a bicycle</string>
@@ -66,7 +81,14 @@
         <item>Female</item>
         <item>Other</item>
     </string-array>
-    <string name="appwidget_text">EXAMPLE</string>
+    <string name="music_text">Tap here to select a default music widget</string>
+    <string name="clock_text">Tap here to select a default clock widget</string>
+    <string name="notes_text">Tap here to select a default notes widget</string>
+    <string name="weather_text">Tap here to select a default weather widget</string>
+    <string name="email_text">Tap here to select a default email widget</string>
+    <string name="calendar_text">Tap here to select a default calendar widget</string>
+    <string name="search_text">Tap here to select a default search widget</string>
+
     <string name="add_widget">Add widget</string>
 
     <string-array name="Widgets">
@@ -79,5 +101,10 @@
         <item>Weather</item>
 
     </string-array>
+    <string name="appwidget_text">EXAMPLE</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_maps_fragment">Map</string>
 
 </resources>

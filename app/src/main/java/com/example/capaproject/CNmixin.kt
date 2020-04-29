@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 abstract class CNmixin{
     @JsonCreator
-    constructor(@JsonProperty("className") cls: String,@JsonProperty("packageName") pkg: String){
+    constructor(@JsonProperty("packageName") pkg: String,@JsonProperty("className") cls: String){
 
     }
 

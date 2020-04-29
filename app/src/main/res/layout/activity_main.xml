@@ -7,29 +7,41 @@
     android:layout_height="fill_parent"
     android:fillViewport="true">
 
-    <ScrollView
-        android:id="@+id/scrollView2"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:id="@+id/mainLayout"
-            android:layout_width="match_parent"
-            android:layout_height="fill_parent"
-            android:orientation="vertical"
-            android:paddingLeft="16dp"
+        <fragment
+            android:id="@+id/fragmentM"
+            android:name="com.example.capaproject.BlankFragment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
-            android:paddingRight="16dp">
+        <ScrollView
+            android:id="@+id/scrollView2"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent">
 
-            <TextView
-                android:id="@+id/text"
+            <LinearLayout
+                android:id="@+id/mainLayout"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="16dp"
-                android:text="Personal Assistant" />
+                android:layout_height="fill_parent"
+                android:orientation="vertical"
+                android:paddingLeft="16dp"
 
-        </LinearLayout>
-    </ScrollView>
+                android:paddingRight="16dp">
+
+                <TextView
+                    android:id="@+id/text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="16dp"
+                    android:text="Personal Assistant" />
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addNew"

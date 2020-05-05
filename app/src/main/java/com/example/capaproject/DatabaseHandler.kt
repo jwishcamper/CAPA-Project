@@ -30,6 +30,7 @@ private object UserHistoryContract{
         const val TABLE_NAME = "UserHistory"
         const val COLUMN_DATE_TIME = "DateTime"
         const val COLUMN_STATE = "State"
+        const val COLUMN_USER_WIDGETS = "UserWidgets"
         const val COLUMN_LATITUDE = "Latitude"
         const val COLUMN_LONGITUDE = "Longitude"
     }
@@ -58,6 +59,7 @@ private const val USER_HISTORY_CREATE_ENTRIES =
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${UserHistoryEntry.COLUMN_DATE_TIME} TEXT," +
             "${UserHistoryEntry.COLUMN_STATE} TEXT," +
+            "${UserHistoryEntry.COLUMN_USER_WIDGETS} TEXT," +
             "${UserHistoryEntry.COLUMN_LATITUDE} DOUBLE," +
             "${UserHistoryEntry.COLUMN_LONGITUDE} DOUBLE)"
 
@@ -292,9 +294,12 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         val db = this.writableDatabase
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
 
+        val mapperString = mapper.writeValueAsString(userHistory.widgets)
+
         val values = ContentValues().apply {
             put(UserHistoryEntry.COLUMN_DATE_TIME, userHistory.dateTime)
             put(UserHistoryEntry.COLUMN_STATE, userHistory.userState)
+            put(UserHistoryEntry.COLUMN_USER_WIDGETS, mapperString)
             put(UserHistoryEntry.COLUMN_LATITUDE, userHistory.latitude)
             put(UserHistoryEntry.COLUMN_LONGITUDE, userHistory.longitude)
         }
@@ -302,26 +307,13 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
 
         val selectQuery = "SELECT * FROM ${UserHistoryEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
-        cursor.moveToLast()
-        //cursor.moveToFirst()
+        /*cursor.moveToLast()
         while(!cursor.isAfterLast){
             Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS)))
             cursor.moveToNext()
-        }
+        }*/
         cursor.close()
-        db.close()
-    }
-
-    //Deletes all tables in database
-    fun deleteData(){
-        val db = this.writableDatabase
-        onUpgrade(db, 1, 1)
-        db.close()
-    }
-
-    fun clearUserHistory() {
-        val db = this.writableDatabase
-        db.execSQL(USER_HISTORY_DELETE_ENTRIES)
         db.close()
     }
 
@@ -329,6 +321,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         return getUserHistoryData()
     }
 
+    //Function to get User History data from the database
     private fun getUserHistoryData() : List<UserHistory> {
         val db = this.readableDatabase
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
@@ -339,15 +332,39 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         val cursor = db.rawQuery(selectQuery, null)
         cursor.moveToFirst()
         while(!cursor.isAfterLast){
+            //val mapperString = cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS))
+            //val widgets :MutableSet<widgetHolder> = mapper.readValue(mapperString)
             result.add(UserHistory(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_DATE_TIME)),
                 cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)),
+                //widgets,
+                mapper.readValue(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS))),
                 cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LATITUDE)),
                 cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LONGITUDE))))
+            cursor.moveToNext()
+        }
+        cursor.moveToLast()
+        while(!cursor.isAfterLast){
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS)))
             cursor.moveToNext()
         }
         cursor.close()
 
         db.close()
         return result
+    }
+
+    //Deletes all tables in database
+    fun deleteData(){
+        val db = this.writableDatabase
+        onUpgrade(db, 1, 1)
+        db.close()
+    }
+
+    //Function to delete UserHistory table in database
+    fun clearUserHistory() {
+        val db = this.writableDatabase
+        db.execSQL(USER_HISTORY_DELETE_ENTRIES)
+        db.close()
     }
 }

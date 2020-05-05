@@ -40,7 +40,7 @@ import kotlin.concurrent.fixedRateTimer
 class MainActivity : AppCompatActivity() {
 
     //Update this boolean variable depending on use for emulator or physical device
-    val useEmulator = false
+    val useEmulator = true
 
     //Update this boolean to "true" if you want state to change automatically with location
     //false is more useful for testing
@@ -117,7 +117,6 @@ companion object{
 
         //NUKE USER HISTORY TABLE!!!!!
         databaseHandler.clearUserHistory()
-
 
         //User pattern
         userPattern = UserPatterns(databaseHandler,this)

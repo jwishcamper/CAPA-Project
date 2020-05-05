@@ -3,14 +3,16 @@ package com.example.capaproject
 import kotlin.math.absoluteValue
 
 class UserHistory{
-    var dateTime =""
-    var userState =""
+    var dateTime = ""
+    var userState = ""
+    var widgets = mutableSetOf<widgetHolder>()
     var latitude = 0.0
     var longitude = 0.0
 
-    constructor(dt : String, us : String, lat : Double, long : Double){
+    constructor(dt : String, us : String, w : MutableSet<widgetHolder>, lat : Double, long : Double){
         dateTime = dt
         userState = us
+        widgets = w
         latitude = lat
         longitude = long
     }

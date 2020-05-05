@@ -13,6 +13,7 @@ import android.appwidget.AppWidgetProvider
 import android.appwidget.AppWidgetProviderInfo
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.view.*
@@ -42,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     val useEmulator = false
 
     //Update this boolean to "true" if you want state to change automatically with location
+    //false is more useful for testing
     private val autoUpdateState = false
 
 
@@ -84,7 +86,7 @@ class MainActivity : AppCompatActivity() {
     private var widgetHolderToChange : widgetHolder? = null
 
     private lateinit var databaseHandler : DatabaseHandler
-
+    private lateinit var userPattern : UserPatterns
 
 
     //currentActivity is current most probable activity
@@ -116,6 +118,10 @@ companion object{
         //NUKE USER HISTORY TABLE!!!!!
         databaseHandler.clearUserHistory()
 
+
+        //User pattern
+        userPattern = UserPatterns(databaseHandler,this)
+
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
@@ -143,6 +149,7 @@ companion object{
         guiHelper = CAPAstate(this, databaseHandler, prefs)
 
         updateContext()
+        slowLoop()
 
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
@@ -191,7 +198,7 @@ companion object{
         }
     }
 
-    //updates textbox context every 1000 milliseconds
+    //updates textbox context every 5000 milliseconds
     private fun updateContext(){
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
@@ -228,7 +235,32 @@ companion object{
             }
         }
     }
-
+    //Runs every 5 minutes
+    private fun slowLoop(){
+        fixedRateTimer("timer2",false,0,300000){
+            this@MainActivity.runOnUiThread {
+                val pattern = userPattern.checkForStatePattern()
+                if(pattern!="None") {
+                    //Prompt to start quick name to destination "pattern"
+                    //if yes, activate driving and start nav
+                    dialogQuickNav(pattern.dropLast(5))
+                }
+            }
+        }
+    }
+    private fun dialogQuickNav(s :String){
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Pattern detected. Do you want to Quick Navigate to $s?")
+            .setPositiveButton("Yes") { _, _ ->
+                activateDriving()
+                //Automatically click quick nav button here
+            }
+        builder.setNegativeButton("No") { dialog, _ ->
+            dialog.cancel()
+        }
+        builder.create()
+        builder.show()
+    }
     private fun removeAllWidgets() {
         var childCount = mainlayout.childCount
         while (childCount > 0) {

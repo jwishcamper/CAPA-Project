@@ -83,10 +83,10 @@ class stateManager(private val context : MainActivity) : GoogleApiClient.Connect
     }
 
     fun getDateTime() : String{
-        return "${getDate()}, ${getTime()}"
+        return "${getDay()}, ${getDate()}, ${getTime()}"
     }
     fun getString() : String {
-        return "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: ${getContext()}"
+        return "${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: ${getContext()}"
     }
     fun getContext() : String{
 

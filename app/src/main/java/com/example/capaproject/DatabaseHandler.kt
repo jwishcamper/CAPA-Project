@@ -318,4 +318,28 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         cursor.close()
         db.close()
     }
+    fun getUserHistory() : List<UserHistory> {
+        return getUserHistoryData()
+    }
+    private fun getUserHistoryData() : List<UserHistory> {
+        val db = this.readableDatabase
+        db.execSQL(USER_HISTORY_CREATE_ENTRIES)
+
+        var result = mutableListOf<UserHistory>()
+
+        val selectQuery = "SELECT * FROM ${UserHistoryEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToFirst()
+        while(!cursor.isAfterLast){
+            result.add(UserHistory(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_DATE_TIME)),
+                cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)),
+                cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LATITUDE)),
+                cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LONGITUDE))))
+            cursor.moveToNext()
+        }
+        cursor.close()
+
+        db.close()
+        return result
+    }
 }

@@ -27,6 +27,7 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.lang.Exception
 import android.content.res.Resources
+import android.graphics.Point
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -45,6 +46,9 @@ class MainActivity : AppCompatActivity() {
     //Update this boolean to "true" if you want state to change automatically with location
     //false is more useful for testing
     private val autoUpdateState = false
+
+    //Update this to true to delete all database info
+    private val nukeDB = false
 
 
 
@@ -112,12 +116,13 @@ companion object{
 
         userProfile = databaseHandler.getSurvey()
 
-        //NUKE THE DATABASE!!!!!
-        databaseHandler.deleteData()
+        if(nukeDB) {
+            //NUKE THE DATABASE!!!!!
+            databaseHandler.deleteData()
 
-        //NUKE USER HISTORY TABLE!!!!!
-        databaseHandler.clearUserHistory()
-
+            //NUKE USER HISTORY TABLE!!!!!
+            databaseHandler.clearUserHistory()
+        }
 
         //User pattern
         userPattern = UserPatterns(databaseHandler,this)
@@ -524,6 +529,15 @@ companion object{
 
         //updating fragment size
         findViewById<View>(R.id.fragmentM).layoutParams.height = 980
+
+/* if want to set size to screen height:
+
+        val dimension = windowManager.defaultDisplay
+        val size = Point()
+        dimension.getSize(size)
+        findViewById<View>(R.id.fragmentM).layoutParams.height = size.y
+
+ */
     }
 
     fun surpressDriving(){

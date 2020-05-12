@@ -29,123 +29,133 @@
                 android:id="@+id/titleLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/colorPrimary"
+                android:textColor="@color/headerText"
                 android:gravity="center"
                 android:text="User Information"
-                android:textAppearance="@style/TextAppearance.AppCompat.Display2" />
+                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Addresses:"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+            <TextView
+                android:id="@+id/homeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Home Address:"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/homeLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Home Address" />
 
                 <EditText
                     android:id="@+id/home"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:ems="10"
                     android:inputType="textPostalAddress" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/workLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Work Address:"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/workLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Work Address" />
 
                 <EditText
                     android:id="@+id/work"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:ems="10"
                     android:inputType="textPostalAddress" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/schoolLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="School Address:"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/schoolLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="School Address" />
 
                 <EditText
                     android:id="@+id/school"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:ems="10"
                     android:inputType="textPostalAddress" />
             </LinearLayout>
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/textView2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:text="Basic Info:"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
-                <TextView
-                    android:id="@+id/birthLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Birth Date" />
+            <TextView
+                android:id="@+id/birthLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Birthday:"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
                 <Spinner
                     android:id="@+id/month"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:entries="@array/month" />
 
                 <Spinner
                     android:id="@+id/date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:entries="@array/date" />
 
                 <Spinner
                     android:id="@+id/year"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
+                    android:layout_height="wrap_content" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/genderLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity=""
+                android:text="Gender:"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/genderLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Gender" />
 
                 <Spinner
                     android:id="@+id/gender"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:entries="@array/gender" />
             </LinearLayout>
 
@@ -154,7 +164,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:onClick="clickBtn"
-                android:text="Submit" />
+                android:text="Save" />
 
 
         </LinearLayout>

@@ -35,6 +35,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
 import java.util.ArrayList
 import com.fasterxml.jackson.module.kotlin.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.concurrent.fixedRateTimer
 
@@ -476,6 +477,7 @@ companion object{
         val id = item.itemId
 
         if (id == R.id.action_setting) {
+            surpressDriving()
 
             val surveyOne = Survey(userProfile,this)
 
@@ -527,17 +529,11 @@ companion object{
         ft.replace(R.id.fragmentM, drivingFragment)
         ft.commit()
 
+        var addBtn = findViewById<FloatingActionButton>(R.id.addNew)
+        addBtn.hide()
+
         //updating fragment size
-        findViewById<View>(R.id.fragmentM).layoutParams.height = 980
-
-/* if want to set size to screen height:
-
-        val dimension = windowManager.defaultDisplay
-        val size = Point()
-        dimension.getSize(size)
-        findViewById<View>(R.id.fragmentM).layoutParams.height = size.y
-
- */
+        //findViewById<View>(R.id.fragmentM).layoutParams.height = 980
     }
 
     fun surpressDriving(){
@@ -547,8 +543,11 @@ companion object{
         ft.replace(R.id.fragmentM, blankFragment)
         ft.commit()
 
+        var addBtn = findViewById<FloatingActionButton>(R.id.addNew)
+        addBtn.show()
+
         //updating fragment size
-        findViewById<View>(R.id.fragmentM).layoutParams.height = 0
+        //findViewById<View>(R.id.fragmentM).layoutParams.height = 0
     }
 
 

@@ -28,7 +28,8 @@ class UserPatterns(var db : DatabaseHandler, var context : MainActivity) {
                 context.resources.getString(R.string.stateSchool) -> schoolList.add(entry)
             }
         }
-        var result = UserHistory("","",0.0,0.0)
+
+        var result = UserHistory("","",mutableSetOf(),0.0,0.0)
         if(workList.size > 5)
             result = checkStateList(workList)
         if(result.userState=="" && homeList.size > 5)

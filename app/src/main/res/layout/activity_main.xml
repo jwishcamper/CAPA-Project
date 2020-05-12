@@ -55,7 +55,7 @@
         android:src="@drawable/ic_add_black_24dp"
         android:tint="#FFF"
         android:visibility="visible"
-        app:backgroundTint="#4DD0E1"
+        app:backgroundTint="@color/colorPrimary"
         app:fabSize="auto"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

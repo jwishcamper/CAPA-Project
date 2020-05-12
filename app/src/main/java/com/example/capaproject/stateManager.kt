@@ -13,7 +13,7 @@ import java.util.*
 //goal of stateManager class - use information such as time, day of week,
 //location, and activity state to guess at the context of the user
 @Suppress("DEPRECATION")
-class stateManager(private val context : Context) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
+class stateManager(private val context : MainActivity) : GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener  {
 
     var location = "None"
     var driving = false
@@ -25,8 +25,8 @@ class stateManager(private val context : Context) : GoogleApiClient.ConnectionCa
         .build()
 
     init {
-        //comment following line out for testing on emulator:
-        //mApiClient.connect()
+        if(!context.useEmulator)
+            mApiClient.connect()
     }
 
     override fun onConnected(bundle: Bundle?) {
@@ -83,10 +83,10 @@ class stateManager(private val context : Context) : GoogleApiClient.ConnectionCa
     }
 
     fun getDateTime() : String{
-        return "${getDate()}, ${getTime()}"
+        return "${getDay()}, ${getDate()}, ${getTime()}"
     }
     fun getString() : String {
-        return "${getDay()}, ${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: ${getContext()}"
+        return "${getDateTime()}     Activity: ${MainActivity.currentActivity}    Context: ${getContext()}"
     }
     fun getContext() : String{
 

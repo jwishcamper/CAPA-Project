@@ -13,6 +13,7 @@ import android.appwidget.AppWidgetProvider
 import android.appwidget.AppWidgetProviderInfo
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.view.*
@@ -26,6 +27,7 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.lang.Exception
 import android.content.res.Resources
+import android.graphics.Point
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -38,6 +40,19 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
+
+    //Update this boolean variable depending on use for emulator or physical device
+    val useEmulator = false
+
+    //Update this boolean to "true" if you want state to change automatically with location
+    //false is more useful for testing
+    private val autoUpdateState = false
+
+    //Update this to true to delete all database info
+    private val nukeDB = false
+
+
+
 
     //location functional variables
     val drivingFragment : DrivingFragment = DrivingFragment()
@@ -76,9 +91,7 @@ class MainActivity : AppCompatActivity() {
     private var widgetHolderToChange : widgetHolder? = null
 
     private lateinit var databaseHandler : DatabaseHandler
-
-    //used for testing serialize objects
-    //private lateinit var mapper : ObjectMapper
+    private lateinit var userPattern : UserPatterns
 
 
     //currentActivity is current most probable activity
@@ -104,48 +117,45 @@ companion object{
 
         userProfile = databaseHandler.getSurvey()
 
-        //NUKE THE DATABASE!!!!!
-        //databaseHandler.deleteData()
+        if(nukeDB) {
+            //NUKE THE DATABASE!!!!!
+            databaseHandler.deleteData()
 
-        //NUKE USER HISTORY TABLE!!!!!
-        databaseHandler.clearUserHistory()
+            //NUKE USER HISTORY TABLE!!!!!
+            databaseHandler.clearUserHistory()
+        }
+
+        //User pattern
+        userPattern = UserPatterns(databaseHandler,this)
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
-/*
-        mapper = jacksonObjectMapper()
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
-*/
-
-        //Log.d("hostView",hostViewReloaded.awpi.provider.packageName)
         prefs = UserPrefApps()
 
-        //Load preferences from database here
+        //Load preferences from database
         prefs = databaseHandler.getUserPrefs()
 
         //If user has never set prefs, set them
         if(prefs.isEmpty())
             setDefaultProviders()
 
-
         //starts location updates
         mLocationRequest = LocationRequest()
 
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        //Start location updates if relevant
         if (checkPermissionForLocation(this)) {
-
-            //comment following line out for use on emulator
-
-            startLocationUpdates()
+            if(!useEmulator)
+                startLocationUpdates()
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
 
         updateContext()
+        slowLoop()
 
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
@@ -194,45 +204,69 @@ companion object{
         }
     }
 
-    //updates textbox context every 1000 milliseconds
+    //updates textbox context every 5000 milliseconds
     private fun updateContext(){
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString()
 
-                if(currentActivity == "In Vehicle" && !drivingFlag){
-                    activateDriving()
-                }
+                if(autoUpdateState) {
+                    if (currentActivity == "In Vehicle" && !drivingFlag) {
+                        activateDriving()
+                    }
 
-                //Following for auto-updating state - comment out for testing
-/*
-                //If context has changed, updateuserstate
-                if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateDriving))
-                    currentState = resources.getString(R.string.stateDriving)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateSchool))
-                    currentState = resources.getString(R.string.stateSchool)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateWork))
-                    currentState = resources.getString(R.string.stateWork)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateHome))
-                    currentState = resources.getString(R.string.stateHome)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateDefault))
-                    currentState = resources.getString(R.string.stateDefault)
-                }
-*/
+                    //If context has changed, updateuserstate
+                    if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateDriving))
+                        currentState = resources.getString(R.string.stateDriving)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateSchool))
+                        currentState = resources.getString(R.string.stateSchool)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateWork))
+                        currentState = resources.getString(R.string.stateWork)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateHome))
+                        currentState = resources.getString(R.string.stateHome)
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+                        currentState = resources.getString(R.string.stateDefault)
+                    }
 
+                }
             }
         }
     }
-
+    //Runs every 5 minutes
+    private fun slowLoop(){
+        fixedRateTimer("timer2",false,0,300000){
+            this@MainActivity.runOnUiThread {
+                val pattern = userPattern.checkForStatePattern()
+                if(pattern!="None") {
+                    //Prompt to start quick name to destination "pattern"
+                    //if yes, activate driving and start nav
+                    dialogQuickNav(pattern.dropLast(5))
+                }
+            }
+        }
+    }
+    private fun dialogQuickNav(s :String){
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Pattern detected. Do you want to Quick Navigate to $s?")
+            .setPositiveButton("Yes") { _, _ ->
+                activateDriving()
+                //Automatically click quick nav button here
+            }
+        builder.setNegativeButton("No") { dialog, _ ->
+            dialog.cancel()
+        }
+        builder.create()
+        builder.show()
+    }
     private fun removeAllWidgets() {
         var childCount = mainlayout.childCount
         while (childCount > 0) {

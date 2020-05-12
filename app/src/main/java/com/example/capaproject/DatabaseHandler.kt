@@ -97,34 +97,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         const val DATABASE_NAME = "Database"
     }
 
-    //given 2 widgetHolders, replace all occurrences of Old to New
-    fun updatePrefsForAllStates(whOld:widgetHolder, whNew:widgetHolder){
-        //iterate through every state
-        for(stateName in context.resources.getStringArray(R.array.States)) {
-            //First, get HashMap from database.
-            val map = getStateData(stateName)
-            //placeholder to update, since we can't update hashMap as we iterate through it
-            var toUpdate = widgetHolder(whOld.awpi, 0)
-            var toUpdateVal = 0.0
-            var found = false
-            //iterate over every value in map
-            for (entry in map) {
-                //if class name matches
-                if (entry.key.awpi.provider.className == whOld.awpi.provider.className) {
-                    toUpdate = entry.key
-                    toUpdateVal = entry.value
-                    found = true
-                }
-            }
-            if (found) {
-                map.remove(toUpdate)
-                map[whNew] = toUpdateVal
-                //only update if needed
-                updateStateData(stateName, map)
-            }
-        }
-    }
-
     fun updateUserPrefs(prefs: UserPrefApps){
         updateUserPrefsData(prefs)
     }
@@ -169,6 +141,43 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         return prefs
     }
 
+    fun updatePrefsForAllStates(whOld: widgetHolder, whNew: widgetHolder){
+        updatePrefsDataForAllStates(whOld, whNew)
+    }
+
+    //given 2 widgetHolders, replace all occurrences of Old to New
+    private fun updatePrefsDataForAllStates(whOld:widgetHolder, whNew:widgetHolder){
+        //iterate through every state
+        for(stateName in context.resources.getStringArray(R.array.States)) {
+            //First, get HashMap from database.
+            val map = getStateData(stateName)
+            //placeholder to update, since we can't update hashMap as we iterate through it
+            var toUpdate = widgetHolder(whOld.awpi, 0)
+            var toUpdateVal = 0.0
+            var found = false
+            //iterate over every value in map
+            for (entry in map) {
+                //if class name matches
+                if (entry.key.awpi.provider.className == whOld.awpi.provider.className) {
+                    toUpdate = entry.key
+                    toUpdateVal = entry.value
+                    found = true
+                }
+            }
+            if (found) {
+                map.remove(toUpdate)
+                map[whNew] = toUpdateVal
+                //only update if needed
+                updateStateData(stateName, map)
+            }
+        }
+    }
+
+    //Updates state info in corresponding table using passed string to check which state
+    fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
+        updateStateData(stateName, map)
+    }
+
     //Adds or updates work state info in database
     private fun updateStateData(stateName: String, map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
@@ -189,42 +198,12 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         }
         db.close()
     }
-    //Updates state info in corresponding table using passed string to check which state
-    fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
-        updateStateData(stateName, map)
-    }
-
-    fun updateDatabaseSurvey(userProfile: UserProfile){
-        updateSurveyData(userProfile)
-    }
-
-    //Deletes all tables in database
-    fun deleteData(){
-        val db = this.writableDatabase
-        onUpgrade(db, 1, 1)
-        db.close()
-    }
-
-    //Adds or updates survey info in database
-    private fun updateSurveyData(profile: UserProfile){
-        val db = this.writableDatabase
-        db.execSQL(SURVEY_CREATE_ENTRIES)
-
-        for(entry in profile.getFieldNames()){
-            val answer = profile.getField(entry)
-            val values = ContentValues().apply{
-                put(SurveyEntry.COLUMN_QUESTION, entry)
-                put(SurveyEntry.COLUMN_ANSWER, answer)
-            }
-            db.replace(SurveyEntry.TABLE_NAME, null, values)
-        }
-        db.close()
-    }
 
     //Uses passed string to get info from corresponding state table
     fun getDatabaseState(stateName: String): HashMap<widgetHolder, Double> {
         return getStateData(stateName)
     }
+
     //Gets state info from database table based on stateName parameter and returns as HashMap
     private fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
@@ -249,6 +228,26 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.close()
 
         return map
+    }
+
+    fun updateDatabaseSurvey(userProfile: UserProfile){
+        updateSurveyData(userProfile)
+    }
+
+    //Adds or updates survey info in database
+    private fun updateSurveyData(profile: UserProfile){
+        val db = this.writableDatabase
+        db.execSQL(SURVEY_CREATE_ENTRIES)
+
+        for(entry in profile.getFieldNames()){
+            val answer = profile.getField(entry)
+            val values = ContentValues().apply{
+                put(SurveyEntry.COLUMN_QUESTION, entry)
+                put(SurveyEntry.COLUMN_ANSWER, answer)
+            }
+            db.replace(SurveyEntry.TABLE_NAME, null, values)
+        }
+        db.close()
     }
 
     fun getSurvey(): UserProfile {
@@ -284,12 +283,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         return UserProfile(home, work, school, gender, birthday)
     }
 
-    fun clearUserHistory(){
-        val db = this.writableDatabase
-        db.execSQL(USER_HISTORY_DELETE_ENTRIES)
-        db.close()
-    }
-
     fun updateUserHistory(userHistory: UserHistory){
         updateUserHistoryData(userHistory)
     }
@@ -316,6 +309,47 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
             cursor.moveToNext()
         }
         cursor.close()
+        db.close()
+    }
+
+    fun getUserHistory() : List<UserHistory> {
+        return getUserHistoryData()
+    }
+    private fun getUserHistoryData() : List<UserHistory> {
+        val db = this.readableDatabase
+        db.execSQL(USER_HISTORY_CREATE_ENTRIES)
+
+        var result = mutableListOf<UserHistory>()
+
+        val selectQuery = "SELECT * FROM ${UserHistoryEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToFirst()
+        while (!cursor.isAfterLast) {
+            result.add(
+                UserHistory(
+                    cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_DATE_TIME)),
+                    cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)),
+                    cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LATITUDE)),
+                    cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LONGITUDE))
+                )
+            )
+            cursor.moveToNext()
+        }
+        cursor.close()
+
+        db.close()
+        return result
+    }
+    //Deletes all tables in database
+    fun deleteData(){
+        val db = this.writableDatabase
+        onUpgrade(db, 1, 1)
+        db.close()
+    }
+
+    fun clearUserHistory(){
+        val db = this.writableDatabase
+        db.execSQL(USER_HISTORY_DELETE_ENTRIES)
         db.close()
     }
 }

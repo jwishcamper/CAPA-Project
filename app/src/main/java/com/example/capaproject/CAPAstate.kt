@@ -36,9 +36,9 @@ class CAPAstate(val context:MainActivity, val db : DatabaseHandler,prefs : UserP
         }
 
         val uh : UserHistory = if(context.useEmulator)
-            UserHistory(context.stateHelper.getDateTime(),getState(),0.0,0.0)
+            UserHistory(context.stateHelper.getDateTime(),getState(),stateMap.keys,0.0,0.0)
         else
-            UserHistory(context.stateHelper.getDateTime(),getState(),context.mLastLocation.latitude,context.mLastLocation.longitude)
+            UserHistory(context.stateHelper.getDateTime(),getState(),stateMap.keys,context.mLastLocation.latitude,context.mLastLocation.longitude)
 
         db.updateUserHistory(uh)
 

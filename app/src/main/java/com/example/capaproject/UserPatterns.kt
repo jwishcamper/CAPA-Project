@@ -5,7 +5,10 @@ import kotlin.math.absoluteValue
 
 class UserPatterns(var db : DatabaseHandler, var context : MainActivity) {
 
+    //Difference in time in minutes to consider 2 timestamps "similar"
     private val similarTimeThreshold = 30
+
+    //Time in minutes before pattern to notify user
     private val timeBeforeThreshold = 30
 
     //Will return either "None", "Work", "School", or "Home" depending on if a pattern is found
@@ -25,12 +28,15 @@ class UserPatterns(var db : DatabaseHandler, var context : MainActivity) {
                 context.resources.getString(R.string.stateSchool) -> schoolList.add(entry)
             }
         }
-
-        var result = checkStateList(workList)
-        if(result.userState=="")
+        var result = UserHistory("","",0.0,0.0)
+        if(workList.size > 5)
+            result = checkStateList(workList)
+        if(result.userState=="" && homeList.size > 5)
             result = checkStateList(homeList)
-        if(result.userState=="")
+        if(result.userState==""&&schoolList.size > 5)
             result = checkStateList(schoolList)
+
+        //If result is not empty, we have a pattern
         if(result.userState!=""){
             var min = Calendar.getInstance().get(Calendar.MINUTE)
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)

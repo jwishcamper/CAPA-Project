@@ -42,7 +42,7 @@ import kotlin.concurrent.fixedRateTimer
 class MainActivity : AppCompatActivity() {
 
     //Update this boolean variable depending on use for emulator or physical device
-    val useEmulator = true
+    val useEmulator = false
 
     //Update this boolean to "true" if you want state to change automatically with location
     //false is more useful for testing
@@ -160,6 +160,7 @@ companion object{
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
 
+
     }
 
     //Build the GUI given a hashmap. Called from CAPAstate.setState
@@ -245,18 +246,15 @@ companion object{
     private fun slowLoop(){
         fixedRateTimer("timer2",false,0,300000){
             this@MainActivity.runOnUiThread {
-                val pattern = userPattern.checkForStatePattern()
-                if(pattern!="None") {
-                    //Prompt to start quick name to destination "pattern"
-                    //if yes, activate driving and start nav
-                    dialogQuickNav(pattern.dropLast(5))
-                }
+                userPattern.checkForStatePattern(mLastLocation,userProfile)
+
             }
         }
     }
-    private fun dialogQuickNav(s :String){
+
+    fun dialogQuickNav(s :String){
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Pattern detected. Do you want to Quick Navigate to $s?")
+        builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes. Would you like to start quick navigation now?")
             .setPositiveButton("Yes") { _, _ ->
                 activateDriving()
                 //Automatically click quick nav button here

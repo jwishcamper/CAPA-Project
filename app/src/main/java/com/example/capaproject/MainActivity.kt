@@ -9,11 +9,8 @@ import kotlin.collections.HashMap
 import android.app.Activity
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.appwidget.AppWidgetProviderInfo
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.view.*
@@ -27,16 +24,13 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import java.lang.Exception
 import android.content.res.Resources
-import android.graphics.Point
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
-import java.util.ArrayList
-import com.fasterxml.jackson.module.kotlin.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
@@ -49,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private val autoUpdateState = false
 
     //Update this to true to delete all database info
-    private val nukeDB = false
+    private val nukeDB = true
 
 
 
@@ -93,6 +87,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var databaseHandler : DatabaseHandler
     private lateinit var userPattern : UserPatterns
 
+    //Variables used to determine whether to show the QuickNav dialog or not
+    private var showDialog = false
+    private var waitTime = 0
+    private var waitDate = 0
 
     //currentActivity is current most probable activity
     //currentState is updated when state changes to ensure that we won't enter the same state twice
@@ -105,7 +103,11 @@ companion object{
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         mainlayout = findViewById(R.id.mainLayout)
-
+        //var tempTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()
+        //tempTime += Calendar.getInstance().get(Calendar.MINUTE)
+        //waitTime = tempTime.toInt()
+        Log.d("test", waitTime.toString())
+        Log.d("test", waitDate.toString())
         //make sure mLastLocation is not null
         val dummyLocation = Location("")
         dummyLocation.latitude = 0.0
@@ -119,10 +121,13 @@ companion object{
 
         if(nukeDB) {
             //NUKE THE DATABASE!!!!!
-            databaseHandler.deleteData()
+            databaseHandler.clearUserData()
 
             //NUKE USER HISTORY TABLE!!!!!
             databaseHandler.clearUserHistory()
+
+            //NUKE USER PATTERNS TABLE!!!!!
+            databaseHandler.clearUserPatterns()
         }
 
         //User pattern
@@ -155,7 +160,7 @@ companion object{
         guiHelper = CAPAstate(this, databaseHandler, prefs)
 
         updateContext()
-        slowLoop()
+        //slowLoop()
 
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
@@ -220,28 +225,44 @@ companion object{
                     if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
                         guiHelper.updateUserState(resources.getString(R.string.stateDriving))
                         currentState = resources.getString(R.string.stateDriving)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
                     }
                     else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
                         guiHelper.updateUserState(resources.getString(R.string.stateSchool))
                         currentState = resources.getString(R.string.stateSchool)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
                     }
                     else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
                         guiHelper.updateUserState(resources.getString(R.string.stateWork))
                         currentState = resources.getString(R.string.stateWork)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
                     }
                     else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
                         guiHelper.updateUserState(resources.getString(R.string.stateHome))
                         currentState = resources.getString(R.string.stateHome)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
                     }
                     else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
                         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
                         currentState = resources.getString(R.string.stateDefault)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
                     }
 
                 }
             }
         }
     }
+    /*
     //Runs every 5 minutes
     private fun slowLoop(){
         fixedRateTimer("timer2",false,0,300000){
@@ -251,19 +272,40 @@ companion object{
             }
         }
     }
+    */
 
     fun dialogQuickNav(s :String){
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes. Would you like to start quick navigation now?")
-            .setPositiveButton("Yes") { _, _ ->
-                activateDriving()
-                //Automatically click quick nav button here
-            }
+        val suppressed = databaseHandler.getUserPatterns()
+        waitDate = suppressed[0]
+        waitTime = suppressed[1]
+        //Log.d("waitTime", waitTime.toString())
+        //Log.d("waitDate", waitDate.toString())
+        val currentDate = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        var tempCurrentTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()
+        tempCurrentTime += Calendar.getInstance().get(Calendar.MINUTE)
+        val currentTime = tempCurrentTime.toInt()
+        if(currentDate > waitDate || (currentDate == waitDate && currentTime >= waitTime + 60)) {
+            builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes. Would you like to start quick navigation now?")
+                .setPositiveButton("Yes") { _, _ ->
+                    activateDriving()
+                    //Automatically click quick nav button here
+                }
+            showDialog = true
+        }
         builder.setNegativeButton("No") { dialog, _ ->
             dialog.cancel()
+            var tempWaitTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()
+            tempWaitTime += Calendar.getInstance().get(Calendar.MINUTE)
+            waitTime = tempWaitTime.toInt()
+            waitDate = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+            databaseHandler.updateUserPatterns(waitDate, waitTime)
+            showDialog = false
         }
-        builder.create()
-        builder.show()
+        if(showDialog) {
+            builder.create()
+            builder.show()
+        }
     }
     private fun removeAllWidgets() {
         var childCount = mainlayout.childCount
@@ -506,11 +548,17 @@ companion object{
             Toast.makeText(this, "State Changed to Work", Toast.LENGTH_LONG).show()
             currentState = resources.getString(R.string.stateWork)
             guiHelper.updateUserState(resources.getString(R.string.stateWork))
+            this@MainActivity.runOnUiThread {
+                userPattern.checkForStatePattern(mLastLocation,userProfile)
+            }
         }
         else if(id == R.id.setDefault){
             Toast.makeText(this, "State Changed to Default", Toast.LENGTH_LONG).show()
             currentState = resources.getString(R.string.stateDefault)
             guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+            this@MainActivity.runOnUiThread {
+                userPattern.checkForStatePattern(mLastLocation,userProfile)
+            }
         }
         else if(id == R.id.setDriving){
             activateDriving()

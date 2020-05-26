@@ -10,6 +10,7 @@ import android.util.Log
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
 import com.example.capaproject.UserPrefsContract.UserPrefsEntry
 import com.example.capaproject.UserHistoryContract.UserHistoryEntry
+import com.example.capaproject.UserPatternsContract.UserPatternsEntry
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -43,6 +44,14 @@ private object UserPrefsContract{
     }
 }
 
+private object UserPatternsContract{
+    object UserPatternsEntry : BaseColumns{
+        const val TABLE_NAME = "UserPatterns"
+        const val SUPPRESSED_DATE = "SuppressedDate"
+        const val SUPPRESSED_TIME = "SuppressedTime"
+    }
+}
+
 private const val SURVEY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${SurveyEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
@@ -53,6 +62,12 @@ private const val USER_PREFS_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${UserPrefsEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${UserPrefsEntry.COLUMN_WIDGET} TEXT)"
+
+private const val USER_PATTERNS_CREATE_ENTRIES =
+    "CREATE TABLE IF NOT EXISTS ${UserPatternsEntry.TABLE_NAME} (" +
+            "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${UserPatternsEntry.SUPPRESSED_DATE} INTEGER," +
+            "${UserPatternsEntry.SUPPRESSED_TIME} INTEGER)"
 
 private const val USER_HISTORY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${UserHistoryEntry.TABLE_NAME} (" +
@@ -68,6 +83,7 @@ private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS WorkState"
 private const val DEFAULT_DELETE_ENTRIES = "DROP TABLE IF EXISTS DefaultState"
 private const val SCHOOL_DELETE_ENTRIES = "DROP TABLE IF EXISTS SchoolState"
 private const val USER_PREFS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPrefsEntry.TABLE_NAME}"
+private const val USER_PATTERNS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPatternsEntry.TABLE_NAME}"
 private const val USER_HISTORY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserHistoryEntry.TABLE_NAME}"
 
 class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -79,6 +95,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(SURVEY_CREATE_ENTRIES)
         db.execSQL(USER_PREFS_CREATE_ENTRIES)
+        db.execSQL(USER_PATTERNS_CREATE_ENTRIES)
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
 
         mapper = jacksonObjectMapper()
@@ -354,8 +371,49 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         return result
     }
 
+    fun updateUserPatterns(suppressDate: Int, suppressTime: Int){
+        updateUserPatternsData(suppressDate, suppressTime)
+    }
+
+    //Updates UserPatterns table
+    private fun updateUserPatternsData(suppressDate : Int, suppressTime : Int){
+        val db = this.writableDatabase
+        db.execSQL(USER_PATTERNS_CREATE_ENTRIES)
+
+        val values = ContentValues().apply {
+            put(UserPatternsEntry.SUPPRESSED_DATE, suppressDate)
+            put(UserPatternsEntry.SUPPRESSED_TIME, suppressTime)
+        }
+        db.insert(UserPatternsEntry.TABLE_NAME, null, values)
+    }
+
+    fun getUserPatterns() : Array<Int>{
+        return getUserPatternsData()
+    }
+
+    //Gets info from UserPatterns table
+    private fun getUserPatternsData() : Array<Int>{
+        val db = this.readableDatabase
+        db.execSQL(USER_PATTERNS_CREATE_ENTRIES)
+
+        var suppressDate = 0
+        var suppressTime = 0
+        val selectQuery = "SELECT * FROM ${UserPatternsEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToLast()
+        while(!cursor.isAfterLast){
+            suppressDate = cursor.getInt(cursor.getColumnIndex(UserPatternsEntry.SUPPRESSED_DATE))
+            suppressTime = cursor.getInt(cursor.getColumnIndex(UserPatternsEntry.SUPPRESSED_TIME))
+            cursor.moveToNext()
+        }
+        cursor.close()
+        db.close()
+
+        return arrayOf(suppressDate, suppressTime)
+    }
+
     //Deletes all tables in database
-    fun deleteData(){
+    fun clearUserData(){
         val db = this.writableDatabase
         onUpgrade(db, 1, 1)
         db.close()
@@ -365,6 +423,13 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     fun clearUserHistory() {
         val db = this.writableDatabase
         db.execSQL(USER_HISTORY_DELETE_ENTRIES)
+        db.close()
+    }
+
+    //Function to delete UserPatterns table in database
+    fun clearUserPatterns(){
+        val db = this.writableDatabase
+        db.execSQL(USER_PATTERNS_DELETE_ENTRIES)
         db.close()
     }
 }

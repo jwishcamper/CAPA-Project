@@ -587,21 +587,21 @@ companion object{
         var hDistance : Float = (-1).toFloat()
 
         try {
-            school = getLocationFromAddress(this, userProfile.getField("School"))
+            school = getLocationFromAddress(this, userProfile.getField("School").replace('|', ' '))
             sDistance  = mLastLocation.distanceTo(school)
         }catch (e: Exception){
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
         try {
-            work = getLocationFromAddress(this, userProfile.getField("Work"))
+            work = getLocationFromAddress(this, userProfile.getField("Work").replace('|', ' '))
             wDistance  = mLastLocation.distanceTo(work)
         }catch (e: Exception){
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
         try {
-            home = getLocationFromAddress(this, userProfile.getField("Home"))
+            home = getLocationFromAddress(this, userProfile.getField("Home").replace('|', ' '))
             hDistance  = mLastLocation.distanceTo(home)
         }catch (e: Exception){
             //val geocoder = Geocoder(this, Locale.getDefault())

@@ -52,14 +52,51 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <EditText
                     android:id="@+id/home"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
+                    android:nextFocusDown="@+id/homeCity"
+                    android:hint="Street Address"
                     android:inputType="textPostalAddress" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/homeCity"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ems="10"
+                        android:nextFocusDown="@+id/homeState"
+                        android:hint="City"
+                        android:inputType="textPostalAddress" />
+
+                    <EditText
+                        android:id="@+id/homeState"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ems="10"
+                        android:nextFocusDown="@+id/homeZip"
+                        android:hint="State/Province"
+                        android:inputType="textPostalAddress" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/homeZip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ems="10"
+                    android:hint="Postal/Zip Code"
+                    android:inputType="textPostalAddress" />
+
             </LinearLayout>
 
             <TextView
@@ -72,14 +109,51 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <EditText
                     android:id="@+id/work"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
+                    android:hint="Street Address"
+                    android:inputType="textPostalAddress"
+                    android:nextFocusDown="@+id/workCity" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/workCity"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ems="10"
+                        android:hint="City"
+                        android:inputType="textPostalAddress"
+                        android:nextFocusDown="@+id/workState" />
+
+                    <EditText
+                        android:id="@+id/workState"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ems="10"
+                        android:hint="State/Province"
+                        android:inputType="textPostalAddress"
+                        android:nextFocusDown="@+id/workZip" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/workZip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ems="10"
+                    android:hint="Postal/Zip Code"
                     android:inputType="textPostalAddress" />
+
             </LinearLayout>
 
             <TextView
@@ -92,14 +166,51 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <EditText
                     android:id="@+id/school"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
+                    android:hint="Street Address"
+                    android:inputType="textPostalAddress"
+                    android:nextFocusDown="@+id/schoolCity" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:id="@+id/schoolCity"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ems="10"
+                        android:hint="City"
+                        android:inputType="textPostalAddress"
+                        android:nextFocusDown="@+id/schoolState" />
+
+                    <EditText
+                        android:id="@+id/schoolState"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ems="10"
+                        android:hint="State/Province"
+                        android:inputType="textPostalAddress"
+                        android:nextFocusDown="@+id/schoolZip" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/schoolZip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ems="10"
+                    android:hint="Postal/Zip Code"
                     android:inputType="textPostalAddress" />
+
             </LinearLayout>
 
             <TextView

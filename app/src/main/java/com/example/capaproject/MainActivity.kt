@@ -158,9 +158,8 @@ companion object{
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
-
+        text.text=""
         updateContext()
-        //slowLoop()
 
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
@@ -214,7 +213,7 @@ companion object{
     private fun updateContext(){
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
-                text.text = stateHelper.getString()
+                //text.text = stateHelper.getString()
 
                 if(autoUpdateState) {
                     if (currentActivity == "In Vehicle" && !drivingFlag) {
@@ -575,7 +574,7 @@ companion object{
         ft.replace(R.id.fragmentM, drivingFragment)
         ft.commit()
 
-        var addBtn = findViewById<FloatingActionButton>(R.id.addNew)
+        var addBtn : FloatingActionButton = findViewById(R.id.addNew)
         addBtn.hide()
 
         //updating fragment size

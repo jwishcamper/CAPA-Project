@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private val autoUpdateState = false
 
     //Update this to true to delete all database info
-    private val nukeDB = true
+    private val nukeDB = false
 
 
 
@@ -158,13 +158,14 @@ companion object{
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
-
+        text.text=""
         updateContext()
-        //slowLoop()
 
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
 
+
+        dialogQuickNav(resources.getString(R.string.stateWork))
 
     }
 
@@ -214,7 +215,7 @@ companion object{
     private fun updateContext(){
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
-                text.text = stateHelper.getString()
+                //text.text = stateHelper.getString()
 
                 if(autoUpdateState) {
                     if (currentActivity == "In Vehicle" && !drivingFlag) {
@@ -286,7 +287,8 @@ companion object{
         tempCurrentTime += Calendar.getInstance().get(Calendar.MINUTE)
         val currentTime = tempCurrentTime.toInt()
         if(currentDate > waitDate || (currentDate == waitDate && currentTime >= waitTime + 60)) {
-            builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes. Would you like to start quick navigation now?")
+            builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes.")
+                .setMessage("Would you like to start quick navigation now?")
                 .setPositiveButton("Yes") { _, _ ->
                     activateDriving()
                     //Automatically click quick nav button here
@@ -575,7 +577,7 @@ companion object{
         ft.replace(R.id.fragmentM, drivingFragment)
         ft.commit()
 
-        var addBtn = findViewById<FloatingActionButton>(R.id.addNew)
+        var addBtn : FloatingActionButton = findViewById(R.id.addNew)
         addBtn.hide()
 
         //updating fragment size

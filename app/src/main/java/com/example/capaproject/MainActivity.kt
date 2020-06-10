@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     private val autoUpdateState = false
 
     //Update this to true to delete all database info
-    private val nukeDB = true
+    private val nukeDB = false
 
 
 
@@ -165,6 +165,8 @@ companion object{
         currentState = resources.getString(R.string.stateDefault)
 
 
+        dialogQuickNav(resources.getString(R.string.stateWork))
+
     }
 
     //Build the GUI given a hashmap. Called from CAPAstate.setState
@@ -285,7 +287,8 @@ companion object{
         tempCurrentTime += Calendar.getInstance().get(Calendar.MINUTE)
         val currentTime = tempCurrentTime.toInt()
         if(currentDate > waitDate || (currentDate == waitDate && currentTime >= waitTime + 60)) {
-            builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes. Would you like to start quick navigation now?")
+            builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes.")
+                .setMessage("Would you like to start quick navigation now?")
                 .setPositiveButton("Yes") { _, _ ->
                     activateDriving()
                     //Automatically click quick nav button here

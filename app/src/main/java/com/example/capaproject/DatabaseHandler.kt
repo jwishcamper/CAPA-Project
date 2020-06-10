@@ -10,6 +10,7 @@ import android.util.Log
 import com.example.capaproject.SurveyReaderContract.SurveyEntry
 import com.example.capaproject.UserPrefsContract.UserPrefsEntry
 import com.example.capaproject.UserHistoryContract.UserHistoryEntry
+import com.example.capaproject.UserPatternsContract.UserPatternsEntry
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -30,6 +31,7 @@ private object UserHistoryContract{
         const val TABLE_NAME = "UserHistory"
         const val COLUMN_DATE_TIME = "DateTime"
         const val COLUMN_STATE = "State"
+        const val COLUMN_USER_WIDGETS = "UserWidgets"
         const val COLUMN_LATITUDE = "Latitude"
         const val COLUMN_LONGITUDE = "Longitude"
     }
@@ -39,6 +41,14 @@ private object UserPrefsContract{
     object UserPrefsEntry : BaseColumns{
         const val TABLE_NAME = "UserPrefs"
         const val COLUMN_WIDGET = "Widget"
+    }
+}
+
+private object UserPatternsContract{
+    object UserPatternsEntry : BaseColumns{
+        const val TABLE_NAME = "UserPatterns"
+        const val SUPPRESSED_DATE = "SuppressedDate"
+        const val SUPPRESSED_TIME = "SuppressedTime"
     }
 }
 
@@ -53,11 +63,18 @@ private const val USER_PREFS_CREATE_ENTRIES =
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${UserPrefsEntry.COLUMN_WIDGET} TEXT)"
 
+private const val USER_PATTERNS_CREATE_ENTRIES =
+    "CREATE TABLE IF NOT EXISTS ${UserPatternsEntry.TABLE_NAME} (" +
+            "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+            "${UserPatternsEntry.SUPPRESSED_DATE} INTEGER," +
+            "${UserPatternsEntry.SUPPRESSED_TIME} INTEGER)"
+
 private const val USER_HISTORY_CREATE_ENTRIES =
     "CREATE TABLE IF NOT EXISTS ${UserHistoryEntry.TABLE_NAME} (" +
             "${BaseColumns._ID} INTEGER PRIMARY KEY," +
             "${UserHistoryEntry.COLUMN_DATE_TIME} TEXT," +
             "${UserHistoryEntry.COLUMN_STATE} TEXT," +
+            "${UserHistoryEntry.COLUMN_USER_WIDGETS} TEXT," +
             "${UserHistoryEntry.COLUMN_LATITUDE} DOUBLE," +
             "${UserHistoryEntry.COLUMN_LONGITUDE} DOUBLE)"
 
@@ -66,6 +83,7 @@ private const val WORK_DELETE_ENTRIES = "DROP TABLE IF EXISTS WorkState"
 private const val DEFAULT_DELETE_ENTRIES = "DROP TABLE IF EXISTS DefaultState"
 private const val SCHOOL_DELETE_ENTRIES = "DROP TABLE IF EXISTS SchoolState"
 private const val USER_PREFS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPrefsEntry.TABLE_NAME}"
+private const val USER_PATTERNS_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserPatternsEntry.TABLE_NAME}"
 private const val USER_HISTORY_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${UserHistoryEntry.TABLE_NAME}"
 
 class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -77,6 +95,7 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(SURVEY_CREATE_ENTRIES)
         db.execSQL(USER_PREFS_CREATE_ENTRIES)
+        db.execSQL(USER_PATTERNS_CREATE_ENTRIES)
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
 
         mapper = jacksonObjectMapper()
@@ -95,34 +114,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
     companion object{
         const val DATABASE_VERSION = 1
         const val DATABASE_NAME = "Database"
-    }
-
-    //given 2 widgetHolders, replace all occurrences of Old to New
-    fun updatePrefsForAllStates(whOld:widgetHolder, whNew:widgetHolder){
-        //iterate through every state
-        for(stateName in context.resources.getStringArray(R.array.States)) {
-            //First, get HashMap from database.
-            val map = getStateData(stateName)
-            //placeholder to update, since we can't update hashMap as we iterate through it
-            var toUpdate = widgetHolder(whOld.awpi, 0)
-            var toUpdateVal = 0.0
-            var found = false
-            //iterate over every value in map
-            for (entry in map) {
-                //if class name matches
-                if (entry.key.awpi.provider.className == whOld.awpi.provider.className) {
-                    toUpdate = entry.key
-                    toUpdateVal = entry.value
-                    found = true
-                }
-            }
-            if (found) {
-                map.remove(toUpdate)
-                map[whNew] = toUpdateVal
-                //only update if needed
-                updateStateData(stateName, map)
-            }
-        }
     }
 
     fun updateUserPrefs(prefs: UserPrefApps){
@@ -169,6 +160,43 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         return prefs
     }
 
+    fun updatePrefsForAllStates(whOld: widgetHolder, whNew: widgetHolder){
+        updatePrefsDataForAllStates(whOld, whNew)
+    }
+
+    //given 2 widgetHolders, replace all occurrences of Old to New
+    private fun updatePrefsDataForAllStates(whOld:widgetHolder, whNew:widgetHolder){
+        //iterate through every state
+        for(stateName in context.resources.getStringArray(R.array.States)) {
+            //First, get HashMap from database.
+            val map = getStateData(stateName)
+            //placeholder to update, since we can't update hashMap as we iterate through it
+            var toUpdate = widgetHolder(whOld.awpi, 0)
+            var toUpdateVal = 0.0
+            var found = false
+            //iterate over every value in map
+            for (entry in map) {
+                //if class name matches
+                if (entry.key.awpi.provider.className == whOld.awpi.provider.className) {
+                    toUpdate = entry.key
+                    toUpdateVal = entry.value
+                    found = true
+                }
+            }
+            if (found) {
+                map.remove(toUpdate)
+                map[whNew] = toUpdateVal
+                //only update if needed
+                updateStateData(stateName, map)
+            }
+        }
+    }
+
+    //Updates state info in corresponding table using passed string to check which state
+    fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
+        updateStateData(stateName, map)
+    }
+
     //Adds or updates work state info in database
     private fun updateStateData(stateName: String, map: HashMap<widgetHolder, Double>){
         val db = this.writableDatabase
@@ -189,42 +217,12 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         }
         db.close()
     }
-    //Updates state info in corresponding table using passed string to check which state
-    fun updateDatabaseState(stateName: String, map: HashMap<widgetHolder, Double>){
-        updateStateData(stateName, map)
-    }
-
-    fun updateDatabaseSurvey(userProfile: UserProfile){
-        updateSurveyData(userProfile)
-    }
-
-    //Deletes all tables in database
-    fun deleteData(){
-        val db = this.writableDatabase
-        onUpgrade(db, 1, 1)
-        db.close()
-    }
-
-    //Adds or updates survey info in database
-    private fun updateSurveyData(profile: UserProfile){
-        val db = this.writableDatabase
-        db.execSQL(SURVEY_CREATE_ENTRIES)
-
-        for(entry in profile.getFieldNames()){
-            val answer = profile.getField(entry)
-            val values = ContentValues().apply{
-                put(SurveyEntry.COLUMN_QUESTION, entry)
-                put(SurveyEntry.COLUMN_ANSWER, answer)
-            }
-            db.replace(SurveyEntry.TABLE_NAME, null, values)
-        }
-        db.close()
-    }
 
     //Uses passed string to get info from corresponding state table
     fun getDatabaseState(stateName: String): HashMap<widgetHolder, Double> {
         return getStateData(stateName)
     }
+
     //Gets state info from database table based on stateName parameter and returns as HashMap
     private fun getStateData(stateName: String): HashMap<widgetHolder, Double> {
         val db = this.readableDatabase
@@ -249,6 +247,26 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         db.close()
 
         return map
+    }
+
+    fun updateDatabaseSurvey(userProfile: UserProfile){
+        updateSurveyData(userProfile)
+    }
+
+    //Adds or updates survey info in database
+    private fun updateSurveyData(profile: UserProfile){
+        val db = this.writableDatabase
+        db.execSQL(SURVEY_CREATE_ENTRIES)
+
+        for(entry in profile.getFieldNames()){
+            val answer = profile.getField(entry)
+            val values = ContentValues().apply{
+                put(SurveyEntry.COLUMN_QUESTION, entry)
+                put(SurveyEntry.COLUMN_ANSWER, answer)
+            }
+            db.replace(SurveyEntry.TABLE_NAME, null, values)
+        }
+        db.close()
     }
 
     fun getSurvey(): UserProfile {
@@ -284,12 +302,6 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         return UserProfile(home, work, school, gender, birthday)
     }
 
-    fun clearUserHistory(){
-        val db = this.writableDatabase
-        db.execSQL(USER_HISTORY_DELETE_ENTRIES)
-        db.close()
-    }
-
     fun updateUserHistory(userHistory: UserHistory){
         updateUserHistoryData(userHistory)
     }
@@ -299,9 +311,12 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
         val db = this.writableDatabase
         db.execSQL(USER_HISTORY_CREATE_ENTRIES)
 
+        val mapperString = mapper.writeValueAsString(userHistory.widgets)
+
         val values = ContentValues().apply {
             put(UserHistoryEntry.COLUMN_DATE_TIME, userHistory.dateTime)
             put(UserHistoryEntry.COLUMN_STATE, userHistory.userState)
+            put(UserHistoryEntry.COLUMN_USER_WIDGETS, mapperString)
             put(UserHistoryEntry.COLUMN_LATITUDE, userHistory.latitude)
             put(UserHistoryEntry.COLUMN_LONGITUDE, userHistory.longitude)
         }
@@ -309,13 +324,112 @@ class DatabaseHandler(val context: Context) : SQLiteOpenHelper(context, DATABASE
 
         val selectQuery = "SELECT * FROM ${UserHistoryEntry.TABLE_NAME}"
         val cursor = db.rawQuery(selectQuery, null)
-        cursor.moveToLast()
-        //cursor.moveToFirst()
+        /*cursor.moveToLast()
         while(!cursor.isAfterLast){
             Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS)))
+            cursor.moveToNext()
+        }*/
+        cursor.close()
+        db.close()
+    }
+
+    fun getUserHistory() : List<UserHistory> {
+        return getUserHistoryData()
+    }
+
+    //Function to get User History data from the database
+    private fun getUserHistoryData() : List<UserHistory> {
+        val db = this.readableDatabase
+        db.execSQL(USER_HISTORY_CREATE_ENTRIES)
+
+        var result = mutableListOf<UserHistory>()
+
+        val selectQuery = "SELECT * FROM ${UserHistoryEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToFirst()
+        while(!cursor.isAfterLast){
+            //val mapperString = cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS))
+            //val widgets :MutableSet<widgetHolder> = mapper.readValue(mapperString)
+            result.add(UserHistory(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_DATE_TIME)),
+                cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)),
+                //widgets,
+                mapper.readValue(cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS))),
+                cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LATITUDE)),
+                cursor.getDouble(cursor.getColumnIndex(UserHistoryEntry.COLUMN_LONGITUDE))))
+            cursor.moveToNext()
+        }
+        cursor.moveToLast()
+        while(!cursor.isAfterLast){
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_STATE)))
+            Log.d("test", cursor.getString(cursor.getColumnIndex(UserHistoryEntry.COLUMN_USER_WIDGETS)))
             cursor.moveToNext()
         }
         cursor.close()
+
+        db.close()
+        return result
+    }
+
+    fun updateUserPatterns(suppressDate: Int, suppressTime: Int){
+        updateUserPatternsData(suppressDate, suppressTime)
+    }
+
+    //Updates UserPatterns table
+    private fun updateUserPatternsData(suppressDate : Int, suppressTime : Int){
+        val db = this.writableDatabase
+        db.execSQL(USER_PATTERNS_CREATE_ENTRIES)
+
+        val values = ContentValues().apply {
+            put(UserPatternsEntry.SUPPRESSED_DATE, suppressDate)
+            put(UserPatternsEntry.SUPPRESSED_TIME, suppressTime)
+        }
+        db.insert(UserPatternsEntry.TABLE_NAME, null, values)
+    }
+
+    fun getUserPatterns() : Array<Int>{
+        return getUserPatternsData()
+    }
+
+    //Gets info from UserPatterns table
+    private fun getUserPatternsData() : Array<Int>{
+        val db = this.readableDatabase
+        db.execSQL(USER_PATTERNS_CREATE_ENTRIES)
+
+        var suppressDate = 0
+        var suppressTime = 0
+        val selectQuery = "SELECT * FROM ${UserPatternsEntry.TABLE_NAME}"
+        val cursor = db.rawQuery(selectQuery, null)
+        cursor.moveToLast()
+        while(!cursor.isAfterLast){
+            suppressDate = cursor.getInt(cursor.getColumnIndex(UserPatternsEntry.SUPPRESSED_DATE))
+            suppressTime = cursor.getInt(cursor.getColumnIndex(UserPatternsEntry.SUPPRESSED_TIME))
+            cursor.moveToNext()
+        }
+        cursor.close()
+        db.close()
+
+        return arrayOf(suppressDate, suppressTime)
+    }
+
+    //Deletes all tables in database
+    fun clearUserData(){
+        val db = this.writableDatabase
+        onUpgrade(db, 1, 1)
+        db.close()
+    }
+
+    //Function to delete UserHistory table in database
+    fun clearUserHistory() {
+        val db = this.writableDatabase
+        db.execSQL(USER_HISTORY_DELETE_ENTRIES)
+        db.close()
+    }
+
+    //Function to delete UserPatterns table in database
+    fun clearUserPatterns(){
+        val db = this.writableDatabase
+        db.execSQL(USER_PATTERNS_DELETE_ENTRIES)
         db.close()
     }
 }

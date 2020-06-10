@@ -9,9 +9,7 @@ import kotlin.collections.HashMap
 import android.app.Activity
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.appwidget.AppWidgetProviderInfo
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -31,12 +29,24 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
-import java.util.ArrayList
-import com.fasterxml.jackson.module.kotlin.*
-import kotlinx.android.synthetic.main.activity_main.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.*
 import kotlin.concurrent.fixedRateTimer
 
 class MainActivity : AppCompatActivity() {
+
+    //Update this boolean variable depending on use for emulator or physical device
+    val useEmulator = false
+
+    //Update this boolean to "true" if you want state to change automatically with location
+    //false is more useful for testing
+    private val autoUpdateState = false
+
+    //Update this to true to delete all database info
+    private val nukeDB = true
+
+
+
 
     //location functional variables
     val drivingFragment : DrivingFragment = DrivingFragment()
@@ -75,10 +85,12 @@ class MainActivity : AppCompatActivity() {
     private var widgetHolderToChange : widgetHolder? = null
 
     private lateinit var databaseHandler : DatabaseHandler
+    private lateinit var userPattern : UserPatterns
 
-    //used for testing serialize objects
-    //private lateinit var mapper : ObjectMapper
-
+    //Variables used to determine whether to show the QuickNav dialog or not
+    private var showDialog = false
+    private var waitTime = 0
+    private var waitDate = 0
 
     //currentActivity is current most probable activity
     //currentState is updated when state changes to ensure that we won't enter the same state twice
@@ -91,7 +103,11 @@ companion object{
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         mainlayout = findViewById(R.id.mainLayout)
-
+        //var tempTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()
+        //tempTime += Calendar.getInstance().get(Calendar.MINUTE)
+        //waitTime = tempTime.toInt()
+        Log.d("test", waitTime.toString())
+        Log.d("test", waitDate.toString())
         //make sure mLastLocation is not null
         val dummyLocation = Location("")
         dummyLocation.latitude = 0.0
@@ -103,51 +119,52 @@ companion object{
 
         userProfile = databaseHandler.getSurvey()
 
-        //NUKE THE DATABASE!!!!!
-        databaseHandler.deleteData()
+        if(nukeDB) {
+            //NUKE THE DATABASE!!!!!
+            databaseHandler.clearUserData()
 
-        //NUKE USER HISTORY TABLE!!!!!
-        databaseHandler.clearUserHistory()
+            //NUKE USER HISTORY TABLE!!!!!
+            databaseHandler.clearUserHistory()
+
+            //NUKE USER PATTERNS TABLE!!!!!
+            databaseHandler.clearUserPatterns()
+        }
+
+        //User pattern
+        userPattern = UserPatterns(databaseHandler,this)
 
         //widget resources
         mAppWidgetManager = AppWidgetManager.getInstance(this)
         mAppWidgetHost = WidgetHost(this, APPWIDGET_HOST_ID)
         infos = mAppWidgetManager.installedProviders
 
-/*
-        mapper = jacksonObjectMapper()
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        mapper.addMixIn(ComponentName::class.java,CNmixin::class.java)
-*/
-
-        //Log.d("hostView",hostViewReloaded.awpi.provider.packageName)
         prefs = UserPrefApps()
 
-        //Load preferences from database here
+        //Load preferences from database
         prefs = databaseHandler.getUserPrefs()
 
         //If user has never set prefs, set them
         if(prefs.isEmpty())
             setDefaultProviders()
 
-
         //starts location updates
         mLocationRequest = LocationRequest()
 
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        //Start location updates if relevant
         if (checkPermissionForLocation(this)) {
-
-            //comment following line out for use on emulator
-
-            startLocationUpdates()
+            if(!useEmulator)
+                startLocationUpdates()
         }
         stateHelper = stateManager(this)
         guiHelper = CAPAstate(this, databaseHandler, prefs)
 
         updateContext()
+        //slowLoop()
 
         guiHelper.updateUserState(resources.getString(R.string.stateDefault))
         currentState = resources.getString(R.string.stateDefault)
+
 
     }
 
@@ -193,45 +210,103 @@ companion object{
         }
     }
 
-    //updates textbox context every 1000 milliseconds
+    //updates textbox context every 5000 milliseconds
     private fun updateContext(){
         fixedRateTimer("timer",false,0,5000){
             this@MainActivity.runOnUiThread {
                 text.text = stateHelper.getString()
 
-                if(currentActivity == "In Vehicle" && !drivingFlag){
-                    activateDriving()
-                }
+                if(autoUpdateState) {
+                    if (currentActivity == "In Vehicle" && !drivingFlag) {
+                        activateDriving()
+                    }
 
-                //Following for auto-updating state - comment out for testing
-/*
-                //If context has changed, updateuserstate
-                if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateDriving))
-                    currentState = resources.getString(R.string.stateDriving)
+                    //If context has changed, updateuserstate
+                    if(stateHelper.getContext() == resources.getString(R.string.stateDriving) && currentState != resources.getString(R.string.stateDriving)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateDriving))
+                        currentState = resources.getString(R.string.stateDriving)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateSchool))
+                        currentState = resources.getString(R.string.stateSchool)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateWork))
+                        currentState = resources.getString(R.string.stateWork)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateHome))
+                        currentState = resources.getString(R.string.stateHome)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
+                    }
+                    else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
+                        guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+                        currentState = resources.getString(R.string.stateDefault)
+                        this@MainActivity.runOnUiThread {
+                            userPattern.checkForStatePattern(mLastLocation,userProfile)
+                        }
+                    }
+
                 }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateSchool) && currentState != resources.getString(R.string.stateSchool)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateSchool))
-                    currentState = resources.getString(R.string.stateSchool)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateWork) && currentState != resources.getString(R.string.stateWork)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateWork))
-                    currentState = resources.getString(R.string.stateWork)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateHome) && currentState != resources.getString(R.string.stateHome)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateHome))
-                    currentState = resources.getString(R.string.stateHome)
-                }
-                else if(stateHelper.getContext() == resources.getString(R.string.stateDefault) && currentState != resources.getString(R.string.stateDefault)) {
-                    guiHelper.updateUserState(resources.getString(R.string.stateDefault))
-                    currentState = resources.getString(R.string.stateDefault)
-                }
-*/
+            }
+        }
+    }
+    /*
+    //Runs every 5 minutes
+    private fun slowLoop(){
+        fixedRateTimer("timer2",false,0,300000){
+            this@MainActivity.runOnUiThread {
+                userPattern.checkForStatePattern(mLastLocation,userProfile)
 
             }
         }
     }
+    */
 
+    fun dialogQuickNav(s :String){
+        val builder = AlertDialog.Builder(this)
+        val suppressed = databaseHandler.getUserPatterns()
+        waitDate = suppressed[0]
+        waitTime = suppressed[1]
+        //Log.d("waitTime", waitTime.toString())
+        //Log.d("waitDate", waitDate.toString())
+        val currentDate = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        var tempCurrentTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()
+        tempCurrentTime += Calendar.getInstance().get(Calendar.MINUTE)
+        val currentTime = tempCurrentTime.toInt()
+        if(currentDate > waitDate || (currentDate == waitDate && currentTime >= waitTime + 60)) {
+            builder.setTitle("In order to get to ${s.dropLast(5)} on time, you need to leave within 10 minutes. Would you like to start quick navigation now?")
+                .setPositiveButton("Yes") { _, _ ->
+                    activateDriving()
+                    //Automatically click quick nav button here
+                }
+            showDialog = true
+        }
+        builder.setNegativeButton("No") { dialog, _ ->
+            dialog.cancel()
+            var tempWaitTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY).toString()
+            tempWaitTime += Calendar.getInstance().get(Calendar.MINUTE)
+            waitTime = tempWaitTime.toInt()
+            waitDate = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+            databaseHandler.updateUserPatterns(waitDate, waitTime)
+            showDialog = false
+        }
+        if(showDialog) {
+            builder.create()
+            builder.show()
+        }
+    }
     private fun removeAllWidgets() {
         var childCount = mainlayout.childCount
         while (childCount > 0) {
@@ -442,6 +517,7 @@ companion object{
         val id = item.itemId
 
         if (id == R.id.action_setting) {
+            surpressDriving()
 
             val surveyOne = Survey(userProfile,this)
 
@@ -472,11 +548,17 @@ companion object{
             Toast.makeText(this, "State Changed to Work", Toast.LENGTH_LONG).show()
             currentState = resources.getString(R.string.stateWork)
             guiHelper.updateUserState(resources.getString(R.string.stateWork))
+            this@MainActivity.runOnUiThread {
+                userPattern.checkForStatePattern(mLastLocation,userProfile)
+            }
         }
         else if(id == R.id.setDefault){
             Toast.makeText(this, "State Changed to Default", Toast.LENGTH_LONG).show()
             currentState = resources.getString(R.string.stateDefault)
             guiHelper.updateUserState(resources.getString(R.string.stateDefault))
+            this@MainActivity.runOnUiThread {
+                userPattern.checkForStatePattern(mLastLocation,userProfile)
+            }
         }
         else if(id == R.id.setDriving){
             activateDriving()
@@ -493,8 +575,11 @@ companion object{
         ft.replace(R.id.fragmentM, drivingFragment)
         ft.commit()
 
+        var addBtn = findViewById<FloatingActionButton>(R.id.addNew)
+        addBtn.hide()
+
         //updating fragment size
-        findViewById<View>(R.id.fragmentM).layoutParams.height = 980
+        //findViewById<View>(R.id.fragmentM).layoutParams.height = 980
     }
 
     fun surpressDriving(){
@@ -504,8 +589,11 @@ companion object{
         ft.replace(R.id.fragmentM, blankFragment)
         ft.commit()
 
+        var addBtn = findViewById<FloatingActionButton>(R.id.addNew)
+        addBtn.show()
+
         //updating fragment size
-        findViewById<View>(R.id.fragmentM).layoutParams.height = 0
+        //findViewById<View>(R.id.fragmentM).layoutParams.height = 0
     }
 
 
@@ -545,21 +633,21 @@ companion object{
         var hDistance : Float = (-1).toFloat()
 
         try {
-            school = getLocationFromAddress(this, userProfile.getField("School"))
+            school = getLocationFromAddress(this, userProfile.getField("School").replace('|', ' '))
             sDistance  = mLastLocation.distanceTo(school)
         }catch (e: Exception){
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
         try {
-            work = getLocationFromAddress(this, userProfile.getField("Work"))
+            work = getLocationFromAddress(this, userProfile.getField("Work").replace('|', ' '))
             wDistance  = mLastLocation.distanceTo(work)
         }catch (e: Exception){
             //val geocoder = Geocoder(this, Locale.getDefault())
             //locLabel.text = "" + geocoder.getFromLocation(mLastLocation.latitude, mLastLocation.longitude, 1)[0].getAddressLine(0)
         }
         try {
-            home = getLocationFromAddress(this, userProfile.getField("Home"))
+            home = getLocationFromAddress(this, userProfile.getField("Home").replace('|', ' '))
             hDistance  = mLastLocation.distanceTo(home)
         }catch (e: Exception){
             //val geocoder = Geocoder(this, Locale.getDefault())
